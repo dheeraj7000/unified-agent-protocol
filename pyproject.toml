@@ -5,24 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "uap-reference"
 version = "0.1.0"
-description = "UAP — The control plane for agentic applications. Coordinates MCP, A2A, AG-UI, OpenAPI, and more under one production-grade protocol."
+description = "UAP — The control plane for agentic applications."
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{ name = "UAP contributors" }]
 license = { text = "Apache-2.0" }
-keywords = ["agents", "protocol", "ai", "mcp", "a2a", "openapi", "sse"]
 dependencies = []
 
 [project.optional-dependencies]
-server = [
-  "fastapi>=0.110",
-  "uvicorn>=0.27"
-]
-dev = [
-  "pytest>=8.0",
-  "ruff>=0.5",
-  "mypy>=1.0"
-]
+server = ["fastapi>=0.110", "uvicorn>=0.27"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
 
 [project.scripts]
 uap-server = "uap.server:main"
@@ -48,4 +39,3 @@ warn_return_any = true
 warn_unused_imports = true
 ignore_missing_imports = true
 no_implicit_optional = true
-

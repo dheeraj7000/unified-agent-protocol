@@ -10,9 +10,10 @@ from .models import (
     UAP_RUNTIME_VERSION,
     CapabilityCard,
 )
+from .policy import PolicyEngine
 from .runtime import UAPRuntime
 
-runtime = UAPRuntime()
+runtime = UAPRuntime(policy_engine=PolicyEngine(strict_permissions=False))
 
 
 # Demo capabilities for local server mode.
@@ -112,7 +113,7 @@ if FastAPI:
     async def get_task(task_id: str):
         if task_id not in runtime.tasks:
             raise HTTPException(status_code=404, detail="task not found")
-        return runtime.tasks[task_id]
+        return {"task_id": task_id, **runtime.tasks[task_id]}
 
     @app.get("/uap/version")
     async def get_version():

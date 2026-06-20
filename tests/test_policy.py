@@ -68,6 +68,22 @@ class PolicyEngineTest(unittest.TestCase):
         self.assertEqual(context.exception.code, "RISK_EXCEEDS_POLICY")
         self.assertIn("low_risk_tool", context.exception.alternative_capabilities)
 
+    def test_strict_permissions(self):
+        pe_permissive = PolicyEngine(strict_permissions=False)
+        envelope = TaskEnvelope(
+            actor=Actor(agent_id="agent", scopes=[]),
+            intent=Intent(goal="test"),
+            policy=Policy(allowed_tools=["t"]),
+        )
+        card = CapabilityCard("t", "T", {}, {}, risk="low", permissions=["t.read"])
+        # Should not raise PolicyDeniedError under permissive mode
+        pe_permissive.check(envelope, card)
+
+        pe_strict = PolicyEngine(strict_permissions=True)
+        with self.assertRaises(PolicyDeniedError) as ctx:
+            pe_strict.check(envelope, card)
+        self.assertEqual(ctx.exception.code, "MISSING_PERMISSION")
+
 
 if __name__ == "__main__":
     unittest.main()

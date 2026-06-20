@@ -51,6 +51,7 @@ def section(title: str):
 
 def build_runtime() -> UAPRuntime:
     from uap.policy import PolicyEngine
+
     runtime = UAPRuntime(policy_engine=PolicyEngine(strict_scopes=False))
 
     # Simulate real backend services

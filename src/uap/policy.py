@@ -20,13 +20,16 @@ class PolicyEngine:
     control, user consent, tenant isolation, and audited approval workflows.
     """
 
-    def __init__(self, strict_scopes: bool = True) -> None:
+    def __init__(self, strict_scopes: bool = True, strict_permissions: bool | None = None) -> None:
         """Initialize PolicyEngine.
 
-        Set strict_scopes=True in production to enforce permissions even when
-        the actor presents an empty scope list.
+        Set strict_permissions=True (or strict_scopes=True) in production to enforce permissions
+        even when the actor presents an empty scope list.
         """
-        self.strict_scopes = strict_scopes
+        if strict_permissions is not None:
+            self.strict_scopes = strict_permissions
+        else:
+            self.strict_scopes = strict_scopes
         self._overrides: dict[str, set[str]] = {}
 
     def grant_approval(self, task_id: str, capability_id: str) -> None:
