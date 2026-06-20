@@ -420,6 +420,18 @@ uap-reference/
   tests/              Unit and integration tests
 ```
 
+### Browse Source (stable links)
+
+Raw GitHub CDN URLs are branch-based and may lag behind pushes. Use these SHA-pinned links to read the current committed source directly:
+
+| File | Description |
+|------|-------------|
+| [src/uap/runtime.py](https://raw.githubusercontent.com/dheeraj7000/unified-agent-protocol/347e2d9/src/uap/runtime.py) | Core execution engine |
+| [src/uap/models.py](https://raw.githubusercontent.com/dheeraj7000/unified-agent-protocol/347e2d9/src/uap/models.py) | Protocol data models |
+| [src/uap/policy.py](https://raw.githubusercontent.com/dheeraj7000/unified-agent-protocol/347e2d9/src/uap/policy.py) | Policy enforcement engine |
+| [conformance/runner.py](https://raw.githubusercontent.com/dheeraj7000/unified-agent-protocol/347e2d9/conformance/runner.py) | Conformance test runner |
+| [tests/test_runtime.py](https://raw.githubusercontent.com/dheeraj7000/unified-agent-protocol/347e2d9/tests/test_runtime.py) | Unit & integration tests |
+
 ---
 
 ## Design Principles
