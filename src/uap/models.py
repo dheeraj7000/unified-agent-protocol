@@ -208,3 +208,6 @@ class ProvenanceRecord:
     trace_id: str
     time: str = field(default_factory=now_iso)
     metadata: JsonDict = field(default_factory=dict)
+
+
+# cache_bust = 1

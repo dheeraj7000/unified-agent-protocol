@@ -11,3 +11,5 @@ server:
 
 zip:
 	cd .. && zip -r uap-reference.zip uap-reference -x 'uap-reference/.venv/*' 'uap-reference/__pycache__/*'
+
+# cache_bust = 1
