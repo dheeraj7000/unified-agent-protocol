@@ -22,25 +22,101 @@
       "type": "string"
     },
     "actor": {
-      "type": "object"
+      "type": "object",
+      "required": ["agent_id"],
+      "properties": {
+        "agent_id": { "type": "string", "minLength": 1 },
+        "user_id": { "type": "string" },
+        "org_id": { "type": "string" },
+        "service_id": { "type": "string" },
+        "delegation_token": { "type": "string" },
+        "scopes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
     },
     "intent": {
-      "type": "object"
+      "type": "object",
+      "required": ["goal"],
+      "properties": {
+        "goal": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string" },
+        "parameters": { "type": "object" }
+      },
+      "additionalProperties": true
     },
     "constraints": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "latency_ms": { "type": "integer" },
+        "max_cost_usd": { "type": "number" },
+        "max_context_tokens": { "type": "integer" },
+        "risk_level": { "enum": ["low", "medium", "high", "critical"] }
+      },
+      "additionalProperties": true
     },
     "context_request": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "detail": { "enum": ["minimal", "standard", "full"] },
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "evidence_required": { "type": "boolean" },
+        "max_items": { "type": "integer" },
+        "max_tokens": { "type": "integer" }
+      },
+      "additionalProperties": true
     },
     "policy": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "requires_approval": { "type": "array", "items": { "type": "string" } },
+        "data_classes": { "type": "array", "items": { "type": "string" } },
+        "allowed_tools": { "type": "array", "items": { "type": "string" } },
+        "denied_tools": { "type": "array", "items": { "type": "string" } },
+        "max_risk": { "enum": ["low", "medium", "high", "critical"] }
+      },
+      "additionalProperties": false
     },
     "execution": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string" },
+        "parallelism": { "type": "integer", "minimum": 1 },
+        "allow_partial_results": { "type": "boolean" },
+        "graph": {
+          "type": "object",
+          "required": ["nodes"],
+          "properties": {
+            "nodes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "capability"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "capability": { "type": "string" },
+                  "input": { "type": "object" },
+                  "depends_on": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "requires_approval": { "type": "boolean" }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     },
     "return": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "stream": { "type": "boolean" },
+        "format": { "type": "string" }
+      },
+      "additionalProperties": false
     },
     "metadata": {
       "type": "object"

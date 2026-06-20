@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAP Gap-Closure Plan — Codex Brief</title>
+<style>
+:root {
+  --ground: #F0F4F9;
+  --text: #1A2638;
+  --dim: #5A7184;
+  --faint: #8FA3B8;
+  --surface: #FFFFFF;
+  --border: #D8E3EE;
+  --border-strong: #B8CCDE;
+  --accent: #C8730A;
+  --accent-bg: #FFF7ED;
+  --protocol: #1A4ED8;
+  --protocol-bg: #EEF4FF;
+  --code-bg: #0E1825;
+  --code-text: #C5D4E8;
+  --code-kw: #F0A030;
+  --code-str: #52C77A;
+  --code-cmt: #435B72;
+  --code-num: #60A5FA;
+  --ph1: #1A4ED8; --ph1-bg: #EEF4FF;
+  --ph2: #6D28D9; --ph2-bg: #F5F3FF;
+  --ph3: #047857; --ph3-bg: #F0FDF4;
+  --ph4: #B45309; --ph4-bg: #FFFBEB;
+  --p0: #C8730A; --p0-bg: #FFF7ED;
+  --p1: #1A4ED8; --p1-bg: #EEF4FF;
+  --p2: #5A7184; --p2-bg: #F4F7FA;
+  --ok: #15803D; --ok-bg: #F0FDF4;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+code, pre, .mono {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: var(--code-bg);
+  padding: 3rem 2rem 2.5rem;
+  border-bottom: 2px solid var(--accent);
+}
+.header-inner { max-width: 1120px; margin: 0 auto; }
+
+.header-eyebrow {
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.9rem;
+}
+
+.header-title {
+  font-size: clamp(2.1rem, 4.5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  color: #F2F6FC;
+  margin-bottom: 0.8rem;
+}
+
+.header-sub {
+  font-size: 0.95rem;
+  color: #7A96B2;
+  max-width: 560px;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.header-stats {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.stat-item { display: flex; flex-direction: column; gap: 0.1rem; }
+.stat-n {
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #E8F0FC;
+  line-height: 1;
+}
+.stat-l {
+  font-size: 0.685rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4A6880;
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* ── SIDEBAR / STACK ── */
+.sidebar {
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+}
+
+.stack-label {
+  font-family: Consolas, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 0 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* column-reverse: DOM order 1→4, renders 4 on top, 1 on bottom */
+.stack {
+  display: flex;
+  flex-direction: column-reverse;
+  margin-bottom: 1.5rem;
+}
+
+.layer {
+  display: block;
+  padding: 0.55rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--border-strong);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-left-color 0.12s ease, background 0.12s ease;
+}
+.layer + .layer { border-top: none; }
+/* first-child in DOM = phase 1 = visually BOTTOM = base */
+.layer:first-child { border-radius: 0 0 3px 3px; }
+/* last-child in DOM = phase 4 = visually TOP */
+.layer:last-child  { border-radius: 3px 3px 0 0; }
+
+.layer-ph {
+  font-family: Consolas, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  text-transform: uppercase;
+}
+.layer-name {
+  display: block;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+.layer-desc {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--dim);
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+.layer[data-ph="1"] .layer-name { color: var(--ph1); }
+.layer[data-ph="2"] .layer-name { color: var(--ph2); }
+.layer[data-ph="3"] .layer-name { color: var(--ph3); }
+.layer[data-ph="4"] .layer-name { color: var(--ph4); }
+
+.layer[data-ph="1"].active { border-left-color: var(--ph1); background: var(--ph1-bg); }
+.layer[data-ph="2"].active { border-left-color: var(--ph2); background: var(--ph2-bg); }
+.layer[data-ph="3"].active { border-left-color: var(--ph3); background: var(--ph3-bg); }
+.layer[data-ph="4"].active { border-left-color: var(--ph4); background: var(--ph4-bg); }
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 0.15rem; }
+.nav-link {
+  font-size: 0.72rem;
+  color: var(--dim);
+  text-decoration: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.nav-link:hover { color: var(--text); background: var(--border); }
+.nav-link .tid {
+  font-family: Consolas, monospace;
+  font-size: 0.65rem;
+  color: var(--faint);
+  min-width: 2.8rem;
+}
+
+/* ── CONTENT AREA ── */
+.content > * + * { margin-top: 3.5rem; }
+
+/* ── SNAPSHOT TABLE ── */
+.snapshot-title {
+  font-size: 0.7rem;
+  font-family: Consolas, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  margin-bottom: 0.75rem;
+}
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+.snap-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.snap-area {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.snap-state {
+  font-size: 0.68rem;
+  color: var(--dim);
+  line-height: 1.4;
+}
+.snap-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.3rem;
+  flex-shrink: 0;
+}
+.snap-hd { display: flex; align-items: center; gap: 0; }
+.dot-miss { background: #E53E3E; }
+.dot-part { background: var(--accent); }
+.dot-ok   { background: #38A169; }
+
+/* ── PHASE SECTION ── */
+.phase { }
+.phase-hd {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.phase-num {
+  font-family: Consolas, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.phase-name {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.phase-goal {
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-left: auto;
+  text-align: right;
+  max-width: 260px;
+  line-height: 1.45;
+}
+
+[data-section="1"] .phase-num, [data-section="1"] .phase-name { color: var(--ph1); }
+[data-section="2"] .phase-num, [data-section="2"] .phase-name { color: var(--ph2); }
+[data-section="3"] .phase-num, [data-section="3"] .phase-name { color: var(--ph3); }
+[data-section="4"] .phase-num, [data-section="4"] .phase-name { color: var(--ph4); }
+
+.tasks { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* ── TASK CARD ── */
+.task {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: 0 4px 4px 0;
+  overflow: hidden;
+}
+.task.p0 { border-left-color: var(--p0); }
+.task.p1 { border-left-color: var(--p1); }
+.task.p2 { border-left-color: var(--p2); }
+
+.task-hd {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.task-id {
+  font-family: Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--protocol);
+  letter-spacing: 0.06em;
+  min-width: 2.8rem;
+}
+.task-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.badge {
+  font-family: Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.badge.p0 { background: var(--p0-bg); color: var(--p0); border: 1px solid #FDBA74; }
+.badge.p1 { background: var(--p1-bg); color: var(--p1); border: 1px solid #BFDBFE; }
+.badge.p2 { background: var(--p2-bg); color: var(--p2); border: 1px solid var(--border-strong); }
+
+.task-body { padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+
+.files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.fc {
+  font-family: Consolas, monospace;
+  font-size: 0.66rem;
+  background: var(--ground);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  padding: 0.15rem 0.45rem;
+  color: var(--dim);
+}
+.fc.new { background: var(--ok-bg); border-color: #86EFAC; color: var(--ok); }
+
+.problem {
+  font-size: 0.84rem;
+  color: var(--dim);
+  background: var(--ground);
+  border-left: 2px solid var(--border-strong);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 2px 2px 0;
+}
+.problem strong { color: var(--text); }
+
+.changes-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  margin-bottom: 0.4rem;
+}
+.changes ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.changes li {
+  font-size: 0.84rem;
+  color: var(--text);
+  padding-left: 1.1rem;
+  position: relative;
+  line-height: 1.55;
+}
+.changes li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--faint);
+  font-size: 0.75rem;
+}
+.changes li code {
+  font-size: 0.79rem;
+  background: var(--ground);
+  border: 1px solid var(--border);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+  color: var(--protocol);
+}
+
+.code-block {
+  background: var(--code-bg);
+  border-radius: 3px;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font-size: 0.76rem;
+  line-height: 1.7;
+  color: var(--code-text);
+  tab-size: 2;
+}
+.code-block .kw  { color: var(--code-kw); }
+.code-block .str { color: var(--code-str); }
+.code-block .cmt { color: var(--code-cmt); font-style: italic; }
+.code-block .num { color: var(--code-num); }
+.code-block .fn  { color: #93C5FD; }
+.code-block .ty  { color: #F9A8D4; }
+
+.accept {
+  font-size: 0.81rem;
+  background: var(--ok-bg);
+  border: 1px solid #86EFAC;
+  border-radius: 3px;
+  padding: 0.55rem 0.75rem;
+  color: var(--ok);
+  line-height: 1.5;
+}
+.accept strong { font-weight: 700; }
+.accept code {
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.6);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+  color: #166534;
+}
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .snapshot-grid { grid-template-columns: 1fr 1fr; }
+  .phase-goal { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer { transition: none; }
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">// uap-reference · June 2026 · Codex Implementation Brief</div>
+    <h1 class="header-title">UAP Gap-Closure Plan</h1>
+    <p class="header-sub">18 tasks across 4 phases — grounded in the actual source tree. Every task names exact files, exact changes, and an acceptance test Codex can run.</p>
+    <div class="header-stats">
+      <div class="stat-item"><span class="stat-n">7</span><span class="stat-l">P0 — fix first</span></div>
+      <div class="stat-item"><span class="stat-n">8</span><span class="stat-l">P1 — production gaps</span></div>
+      <div class="stat-item"><span class="stat-n">3</span><span class="stat-l">P2 — completeness</span></div>
+      <div class="stat-item"><span class="stat-n">~3</span><span class="stat-l">weeks to ship v0.1-alpha</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Phase navigation">
+    <div class="stack-label"><span>base ↓</span><span>top ↑</span></div>
+    <nav class="stack" aria-label="Protocol phases stacked by dependency">
+      <!-- DOM order 1→4; flex column-reverse renders 4 on top, 1 on bottom -->
+      <a class="layer active" href="#phase-1" data-ph="1">
+        <span class="layer-ph">Phase 1</span>
+        <span class="layer-name">SPEC</span>
+        <span class="layer-desc">schemas · normative · conformance</span>
+      </a>
+      <a class="layer" href="#phase-2" data-ph="2">
+        <span class="layer-ph">Phase 2</span>
+        <span class="layer-name">RUNTIME</span>
+        <span class="layer-desc">approvals · cancel · timeouts · versions</span>
+      </a>
+      <a class="layer" href="#phase-3" data-ph="3">
+        <span class="layer-ph">Phase 3</span>
+        <span class="layer-name">QUALITY</span>
+        <span class="layer-desc">CI · types · linting · bugs</span>
+      </a>
+      <a class="layer" href="#phase-4" data-ph="4">
+        <span class="layer-ph">Phase 4</span>
+        <span class="layer-name">ECOSYSTEM</span>
+        <span class="layer-desc">demos · community · README</span>
+      </a>
+    </nav>
+
+    <nav class="sidebar-nav" aria-label="Task links">
+      <a class="nav-link" href="#t1-1"><span class="tid">T1.1</span>Deepen Schemas</a>
+      <a class="nav-link" href="#t1-2"><span class="tid">T1.2</span>spec/v0.1/ Dir</a>
+      <a class="nav-link" href="#t1-3"><span class="tid">T1.3</span>Conformance Suite</a>
+      <a class="nav-link" href="#t2-1"><span class="tid">T2.1</span>Approval Resume</a>
+      <a class="nav-link" href="#t2-2"><span class="tid">T2.2</span>Cancellation</a>
+      <a class="nav-link" href="#t2-3"><span class="tid">T2.3</span>Cycle Detection</a>
+      <a class="nav-link" href="#t2-4"><span class="tid">T2.4</span>Node Timeouts</a>
+      <a class="nav-link" href="#t2-5"><span class="tid">T2.5</span>Version Negotiation</a>
+      <a class="nav-link" href="#t2-6"><span class="tid">T2.6</span>SSE Event IDs</a>
+      <a class="nav-link" href="#t3-1"><span class="tid">T3.1</span>Fix Any Import</a>
+      <a class="nav-link" href="#t3-2"><span class="tid">T3.2</span>Fix ValidationError</a>
+      <a class="nav-link" href="#t3-3"><span class="tid">T3.3</span>Enhanced CI</a>
+      <a class="nav-link" href="#t3-4"><span class="tid">T3.4</span>mypy Config</a>
+      <a class="nav-link" href="#t3-5"><span class="tid">T3.5</span>Strict Scopes</a>
+      <a class="nav-link" href="#t4-1"><span class="tid">T4.1</span>Community Files</a>
+      <a class="nav-link" href="#t4-2"><span class="tid">T4.2</span>Quickstart</a>
+      <a class="nav-link" href="#t4-3"><span class="tid">T4.3</span>MCP Bridge Demo</a>
+      <a class="nav-link" href="#t4-4"><span class="tid">T4.4</span>README Overhaul</a>
+    </nav>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- STATUS SNAPSHOT -->
+    <section aria-labelledby="snap-hd">
+      <p class="snapshot-title" id="snap-hd">// current state — what the source actually contains</p>
+      <div class="snapshot-grid">
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-part"></span><span class="snap-area">JSON Schemas</span></div>
+          <span class="snap-state">5 files exist. All sub-objects (<code>actor</code>, <code>intent</code>, <code>constraints</code>…) typed as bare <code>{"type":"object"}</code> — useless for validation.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Normative Spec</span></div>
+          <span class="snap-state"><code>docs/SPEC.md</code> exists but is informal prose. No <code>spec/v0.1/</code> directory. No MUST/SHOULD/MAY language. Not implementable by a third party.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Conformance Suite</span></div>
+          <span class="snap-state"><code>examples/integration_test.py</code> has 53 assertions but tests only the Python runtime. No test vectors. No <code>uap-conformance</code> CLI.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Approval Resume</span></div>
+          <span class="snap-state"><code>ApprovalRequiredError</code> pauses correctly. No state is saved. No <code>/approve</code> endpoint. Paused tasks are permanently stuck.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Task Cancellation</span></div>
+          <span class="snap-state"><code>task.cancelled</code> is a recognised terminal event in <code>EventBus</code> but there is no <code>cancel()</code> method and no <code>DELETE /uap/tasks/{id}</code> endpoint.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-part"></span><span class="snap-area">Cycle Detection</span></div>
+          <span class="snap-state">Raises <code>PLAN_CYCLE_OR_MISSING_DEPENDENCY</code> when <code>ready</code> is empty — conflates two distinct errors. No explicit topological sort.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Node Timeouts</span></div>
+          <span class="snap-state">No <code>asyncio.wait_for</code> wrapping around capability handlers. A hanging handler hangs the whole task indefinitely.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Version Negotiation</span></div>
+          <span class="snap-state">The <code>uap</code> field is accepted but never validated. No <code>/uap/version</code> endpoint. No <code>UNSUPPORTED_VERSION</code> error code.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">SSE Reconnect</span></div>
+          <span class="snap-state">SSE stream emits no <code>id:</code> lines. Clients cannot use <code>Last-Event-ID</code> to reconnect without replaying all events.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-part"></span><span class="snap-area">Type Annotations</span></div>
+          <span class="snap-state"><code>policy.py</code> uses <code>Optional[Any]</code> in <code>check()</code> but <code>Any</code> is not imported. <code>Iterable</code> is imported but never used.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-part"></span><span class="snap-area">CI Workflow</span></div>
+          <span class="snap-state">Only runs <code>python -m unittest discover</code> on Python 3.12. No linting, no type checking, no integration test, no multi-version matrix.</span>
+        </div>
+        <div class="snap-card">
+          <div class="snap-hd"><span class="snap-dot dot-miss"></span><span class="snap-area">Community Files</span></div>
+          <span class="snap-state">No <code>CONTRIBUTING.md</code>, <code>SECURITY.md</code>, <code>CHANGELOG.md</code>, or <code>ROADMAP.md</code>. Repo signals "generated" rather than "maintained."</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════ -->
+    <!-- PHASE 1 -->
+    <!-- ════════════════════════════════════════════════ -->
+    <section id="phase-1" data-section="1">
+      <div class="phase-hd">
+        <span class="phase-num">Phase 1</span>
+        <span class="phase-name">Spec &amp; Protocol Credibility</span>
+        <span class="phase-goal">Close the gap between "reference implementation" and "implementable protocol." Nothing else matters if the schemas cannot validate and the spec cannot be followed.</span>
+      </div>
+
+      <div class="tasks">
+
+        <!-- T1.1 -->
+        <article class="task p0" id="t1-1">
+          <div class="task-hd">
+            <span class="task-id">T1.1</span>
+            <h2 class="task-title">Deepen JSON Schemas</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">schemas/uap_envelope.schema.json</span>
+              <span class="fc">schemas/capability_card.schema.json</span>
+              <span class="fc">schemas/event.schema.json</span>
+              <span class="fc">schemas/error.schema.json</span>
+              <span class="fc">schemas/task_graph.schema.json</span>
+              <span class="fc new">+ schemas/policy.schema.json</span>
+              <span class="fc new">+ schemas/provenance.schema.json</span>
+            </div>
+            <div class="problem">
+              <strong>Problem:</strong> Every sub-object (<code>actor</code>, <code>intent</code>, <code>constraints</code>, <code>context_request</code>, <code>policy</code>, <code>execution</code>, <code>return</code>) is currently typed as a bare <code>{"type":"object"}</code> with no properties. The schemas cannot catch missing <code>agent_id</code>, wrong risk enums, or invalid DAG nodes — the same errors the Python validator does catch.
+            </div>
+            <div class="changes">
+              <div class="changes-title">Changes required</div>
+              <ul>
+                <li>In <code>uap_envelope.schema.json</code>: replace bare sub-objects with full <code>$defs</code>-based schemas for <code>actor</code> (required: <code>agent_id: string</code>; optional: <code>user_id</code>, <code>org_id</code>, <code>service_id</code>, <code>delegation_token: string</code>; <code>scopes: array of string</code>; <code>additionalProperties: false</code>), <code>intent</code> (required: <code>goal: string</code>; optional: <code>domain: string</code>, <code>parameters: object</code>), <code>constraints</code> (<code>latency_ms: integer</code>, <code>max_cost_usd: number</code>, <code>max_context_tokens: integer</code>, <code>risk_level: enum[low,medium,high,critical]</code>), <code>context_request</code> (<code>detail: enum[minimal,standard,full]</code>, <code>fields: array</code>, <code>evidence_required: boolean</code>, <code>max_items: integer</code>, <code>max_tokens: integer</code>), <code>policy</code> (<code>requires_approval/data_classes/allowed_tools/denied_tools: array of string</code>, <code>max_risk: enum</code>), <code>execution</code> (<code>mode: string</code>, <code>parallelism: integer min 1</code>, <code>allow_partial_results: boolean</code>, <code>graph</code> with typed <code>nodes</code> array).</li>
+                <li>In <code>capability_card.schema.json</code>: add <code>risk: enum[low,medium,high,critical]</code>, <code>permissions: array of string</code>, <code>tags: array of string</code>, <code>requires_approval: boolean</code>, <code>idempotent: boolean</code>, <code>latency_p50_ms: integer</code>, <code>latency_p95_ms: integer</code>, <code>transport: object</code>.</li>
+                <li>In <code>event.schema.json</code>: add <code>event_id: string</code> (required), <code>time: string, format: date-time</code>, <code>type: enum</code> (all 14 lifecycle event types), <code>trace_id: string</code>.</li>
+                <li>In <code>error.schema.json</code>: add required <code>code: string</code>, <code>message: string</code>; optional <code>recoverable: boolean</code>, <code>safe_retry: boolean</code>, <code>retry_after_ms: integer</code>, <code>alternative_capabilities: array of string</code>, <code>details: object</code>.</li>
+                <li>Create <code>schemas/policy.schema.json</code> as a standalone schema for the <code>policy</code> sub-object (reuse the <code>$def</code> from the envelope schema via <code>$ref</code> or duplicate for standalone use).</li>
+                <li>Create <code>schemas/provenance.schema.json</code> with fields: <code>task_id</code>, <code>capability_id</code>, <code>actor_id</code>, <code>input_digest</code> (pattern: <code>^[0-9a-f]{64}$</code>), <code>output_digest</code> (same pattern), <code>trace_id</code>, <code>time</code> (date-time), <code>metadata: object</code>.</li>
+              </ul>
+            </div>
+            <pre class="code-block"><code><span class="cmt">// schemas/uap_envelope.schema.json — actor sub-schema (replace the bare object)</span>
+<span class="str">"actor"</span>: {
+  <span class="str">"type"</span>: <span class="str">"object"</span>,
+  <span class="str">"required"</span>: [<span class="str">"agent_id"</span>],
+  <span class="str">"properties"</span>: {
+    <span class="str">"agent_id"</span>:         { <span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"minLength"</span>: <span class="num">1</span> },
+    <span class="str">"user_id"</span>:          { <span class="str">"type"</span>: <span class="str">"string"</span> },
+    <span class="str">"org_id"</span>:           { <span class="str">"type"</span>: <span class="str">"string"</span> },
+    <span class="str">"service_id"</span>:       { <span class="str">"type"</span>: <span class="str">"string"</span> },
+    <span class="str">"delegation_token"</span>: { <span class="str">"type"</span>: <span class="str">"string"</span> },
+    <span class="str">"scopes"</span>:           { <span class="str">"type"</span>: <span class="str">"array"</span>, <span class="str">"items"</span>: { <span class="str">"type"</span>: <span class="str">"string"</span> } }
+  },
+  <span class="str">"additionalProperties"</span>: <span class="kw">false</span>
+}</code></pre>
+            <div class="accept"><strong>Accept:</strong> <code>python -c "import json,jsonschema; s=json.load(open('schemas/uap_envelope.schema.json')); jsonschema.validate({'uap':'1.0','type':'task.invoke','task_id':'t1','actor':{'agent_id':'x'},'intent':{'goal':'y'}},s)"</code> passes. <code>jsonschema.validate({'actor':{}}, s)</code> raises <code>ValidationError</code> citing <code>agent_id</code>.</div>
+          </div>
+        </article>
+
+        <!-- T1.2 -->
+        <article class="task p0" id="t1-2">
+          <div class="task-hd">
+            <span class="task-id">T1.2</span>
+            <h2 class="task-title">Create spec/v0.1/ Directory — 14 normative documents</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc new">+ spec/v0.1/index.md</span>
+              <span class="fc new">+ spec/v0.1/envelope.md</span>
+              <span class="fc new">+ spec/v0.1/capability-card.md</span>
+              <span class="fc new">+ spec/v0.1/task-graph.md</span>
+              <span class="fc new">+ spec/v0.1/policy.md</span>
+              <span class="fc new">+ spec/v0.1/context-contract.md</span>
+              <span class="fc new">+ spec/v0.1/provenance.md</span>
+              <span class="fc new">+ spec/v0.1/errors.md</span>
+              <span class="fc new">+ spec/v0.1/events.md</span>
+              <span class="fc new">+ spec/v0.1/approval-lifecycle.md</span>
+              <span class="fc new">+ spec/v0.1/transport-http.md</span>
+              <span class="fc new">+ spec/v0.1/transport-sse.md</span>
+              <span class="fc new">+ spec/v0.1/security.md</span>
+              <span class="fc new">+ spec/v0.1/compatibility.md</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> No normative specification exists. A third-party developer reading this repo cannot determine what a compliant UAP runtime must do. The existing <code>docs/SPEC.md</code> is explanatory prose, not a standard.</div>
+            <div class="changes">
+              <div class="changes-title">Required content per file</div>
+              <ul>
+                <li><code>index.md</code>: Protocol overview, goals, non-goals, RFC-2119 conformance language declaration, two conformance tiers: CORE (envelope + policy + events) and FULL (+ approval + SSE + version negotiation).</li>
+                <li><code>envelope.md</code>: Normative rules — a runtime MUST reject any envelope missing <code>uap</code>, <code>type</code>, <code>task_id</code>, <code>actor</code>, or <code>intent</code>; MUST reject if <code>actor.agent_id</code> is absent; <code>task_id</code> MUST be unique within a server instance.</li>
+                <li><code>task-graph.md</code>: A graph MUST NOT contain cycles. A runtime MUST reject graphs where <code>depends_on</code> references a node ID not in the graph. Independent nodes SHOULD execute concurrently.</li>
+                <li><code>policy.md</code>: Enforcement order is fixed — (1) allowed_tools, (2) denied_tools, (3) risk level, (4) scope check, (5) approval gate. A runtime MUST apply all five in this order before invoking any capability.</li>
+                <li><code>events.md</code>: <code>task.accepted</code> MUST be emitted before any <code>tool.started</code>. <code>tool.completed</code> MUST follow <code>tool.started</code> for the same node. The final event MUST be one of <code>task.completed</code>, <code>task.failed</code>, or <code>task.cancelled</code>. All events MUST include <code>event_id</code>, <code>task_id</code>, <code>time</code>, <code>uap</code>.</li>
+                <li><code>approval-lifecycle.md</code>: On approval gate, runtime MUST emit <code>approval.requested</code> and set status to <code>waiting_for_approval</code>. Resume MUST be triggered by a separate client call. Runtime MUST emit <code>approval.granted</code> before continuing execution.</li>
+                <li><code>errors.md</code>: Full taxonomy table — all 21 error codes with description, <code>recoverable</code>, and <code>safe_retry</code> values: <code>INVALID_ENVELOPE</code>, <code>INVALID_ACTOR</code>, <code>INVALID_INTENT</code>, <code>INVALID_CONSTRAINTS</code>, <code>INVALID_CONTEXT_REQUEST</code>, <code>INVALID_POLICY</code>, <code>INVALID_EXECUTION</code>, <code>INVALID_EXECUTION_GRAPH</code>, <code>INVALID_RETURN</code>, <code>TOOL_NOT_ALLOWED</code>, <code>TOOL_DENIED</code>, <code>RISK_EXCEEDS_POLICY</code>, <code>MISSING_PERMISSION</code>, <code>APPROVAL_REQUIRED</code>, <code>TASK_CANCELLED</code>, <code>CAPABILITY_TIMEOUT</code>, <code>PLAN_GRAPH_CYCLE</code>, <code>PLAN_MISSING_DEPENDENCY</code>, <code>UNHANDLED_ERROR</code>, <code>UNSUPPORTED_VERSION</code>, <code>TASK_NOT_FOUND</code>.</li>
+                <li><code>security.md</code>: Threat model table — rows: prompt injection, capability escalation, confused deputy, data leakage (overbroad field return), replay attack (stale approval token), event spoofing, provenance tampering. Each row: threat description, UAP mitigation.</li>
+                <li><code>transport-http.md</code>: All endpoints with method, path, request/response shape, HTTP status codes. <code>POST /uap/tasks</code> returns HTTP 200 even for <code>status:failed</code> — HTTP status reflects transport, not task outcome.</li>
+                <li><code>compatibility.md</code>: Version format, unknown field handling (MUST preserve unknown top-level metadata fields), breaking-change definition, <code>min_client_version</code> semantics.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>ls spec/v0.1/</code> shows all 14 files. <code>grep -c "MUST" spec/v0.1/index.md</code> returns ≥ 5. <code>grep "PLAN_GRAPH_CYCLE" spec/v0.1/errors.md</code> matches. All 21 error codes appear in <code>errors.md</code>.</div>
+          </div>
+        </article>
+
+        <!-- T1.3 -->
+        <article class="task p0" id="t1-3">
+          <div class="task-hd">
+            <span class="task-id">T1.3</span>
+            <h2 class="task-title">Conformance Test Vectors and Runner</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc new">+ conformance/test-vectors/01_valid_minimal.json</span>
+              <span class="fc new">+ conformance/test-vectors/02_valid_full.json</span>
+              <span class="fc new">+ conformance/test-vectors/03_missing_actor.json</span>
+              <span class="fc new">+ conformance/test-vectors/04_missing_intent_goal.json</span>
+              <span class="fc new">+ conformance/test-vectors/05_actor_no_agent_id.json</span>
+              <span class="fc new">+ conformance/test-vectors/06_tool_denied.json</span>
+              <span class="fc new">+ conformance/test-vectors/07_tool_not_allowed.json</span>
+              <span class="fc new">+ conformance/test-vectors/08_risk_too_high.json</span>
+              <span class="fc new">+ conformance/test-vectors/09_approval_required.json</span>
+              <span class="fc new">+ conformance/test-vectors/10_dag_chain.json</span>
+              <span class="fc new">+ conformance/test-vectors/11_field_masking.json</span>
+              <span class="fc new">+ conformance/test-vectors/12_event_ordering.json</span>
+              <span class="fc new">+ conformance/test-vectors/13_unsupported_version.json</span>
+              <span class="fc new">+ conformance/test-vectors/14_empty_graph.json</span>
+              <span class="fc new">+ conformance/runner.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> No way for an alternative UAP runtime to prove protocol compliance. The 53-assertion integration test is implementation-specific Python — it cannot be run against a different server.</div>
+            <div class="changes">
+              <div class="changes-title">Vector format (each JSON file)</div>
+              <ul>
+                <li>Fields: <code>name</code> (string), <code>description</code> (string), <code>setup</code> (object — capabilities to pre-register), <code>input</code> (the task envelope to POST), <code>expect</code> (object with <code>status</code> and/or <code>error.code</code> assertions).</li>
+                <li>Vector 09 expects <code>{"status": "waiting_for_approval"}</code> and <code>{"error.code": "APPROVAL_REQUIRED"}</code>. Vector 13 (unsupported version) requires T2.5 to be complete first — mark dependency in the file.</li>
+                <li>Vector 12 (event ordering) must subscribe to the SSE stream and verify <code>task.accepted</code> arrives before any <code>tool.started</code>, which arrives before <code>task.completed</code>.</li>
+              </ul>
+            </div>
+            <pre class="code-block"><code><span class="cmt"># conformance/runner.py — minimal skeleton</span>
+<span class="kw">import</span> httpx, json, sys
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+
+<span class="kw">def</span> <span class="fn">run</span>(target: <span class="ty">str</span>, vectors_dir: <span class="ty">str</span> = <span class="str">"conformance/test-vectors"</span>) -&gt; <span class="kw">None</span>:
+    passed = failed = <span class="num">0</span>
+    <span class="kw">for</span> f <span class="kw">in</span> sorted(Path(vectors_dir).glob(<span class="str">"*.json"</span>)):
+        v = json.loads(f.read_text())
+        r = httpx.post(<span class="str">f"{target}/uap/tasks"</span>, json=v[<span class="str">"input"</span>]).json()
+        ok = <span class="kw">True</span>
+        <span class="kw">if</span> (exp := v[<span class="str">"expect"</span>].get(<span class="str">"status"</span>)) <span class="kw">and</span> r.get(<span class="str">"status"</span>) != exp:
+            print(<span class="str">f"FAIL {v['name']}: expected status={exp}, got {r.get('status')}"</span>)
+            ok = <span class="kw">False</span>
+        <span class="kw">if</span> (ec := v[<span class="str">"expect"</span>].get(<span class="str">"error.code"</span>)):
+            got = r.get(<span class="str">"error"</span>, {}).get(<span class="str">"code"</span>)
+            <span class="kw">if</span> got != ec:
+                print(<span class="str">f"FAIL {v['name']}: expected error.code={ec}, got {got}"</span>)
+                ok = <span class="kw">False</span>
+        <span class="kw">if</span> ok:
+            print(<span class="str">f"PASS {v['name']}"</span>); passed += <span class="num">1</span>
+        <span class="kw">else</span>:
+            failed += <span class="num">1</span>
+    print(<span class="str">f"\n{passed} passed, {failed} failed"</span>)
+    sys.exit(<span class="num">1</span> <span class="kw">if</span> failed <span class="kw">else</span> <span class="num">0</span>)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    run(sys.argv[<span class="num">1</span>] <span class="kw">if</span> len(sys.argv) &gt; <span class="num">1</span> <span class="kw">else</span> <span class="str">"http://localhost:8000"</span>)</code></pre>
+            <div class="accept"><strong>Accept:</strong> With the demo server running (<code>uap-server</code>), <code>python conformance/runner.py http://localhost:8000</code> shows 14 passed, 0 failed (excluding vector 13 until T2.5 is merged).</div>
+          </div>
+        </article>
+
+      </div><!-- /tasks phase 1 -->
+    </section>
+
+    <!-- ════════════════════════════════════════════════ -->
+    <!-- PHASE 2 -->
+    <!-- ════════════════════════════════════════════════ -->
+    <section id="phase-2" data-section="2">
+      <div class="phase-hd">
+        <span class="phase-num">Phase 2</span>
+        <span class="phase-name">Runtime Completeness</span>
+        <span class="phase-goal">Close the gaps between what the spec now says (T1.2) and what the Python runtime actually does. T2.1 is P0 because a stuck approval is a broken protocol.</span>
+      </div>
+
+      <div class="tasks">
+
+        <!-- T2.1 -->
+        <article class="task p0" id="t2-1">
+          <div class="task-hd">
+            <span class="task-id">T2.1</span>
+            <h2 class="task-title">Approval Lifecycle — Save State and Add Resume Endpoint</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/policy.py</span>
+              <span class="fc">src/uap/runtime.py</span>
+              <span class="fc">src/uap/server.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> When <code>ApprovalRequiredError</code> is raised in <code>execute_node</code>, the runtime catches it in <code>invoke</code>, sets status to <code>waiting_for_approval</code>, and stops. The envelope, graph, and completed-so-far nodes are discarded. There is no resume path.</div>
+            <div class="changes">
+              <div class="changes-title">Changes — policy.py</div>
+              <ul>
+                <li>Add <code>__init__(self) -> None</code> to <code>PolicyEngine</code> (it currently has no <code>__init__</code>). Add <code>self._overrides: Dict[str, Set[str]] = {}</code> — maps <code>task_id</code> → set of approved <code>capability_id</code>s.</li>
+                <li>Add <code>def grant_approval(self, task_id: str, capability_id: str) -> None</code>: <code>self._overrides.setdefault(task_id, set()).add(capability_id)</code>.</li>
+                <li>Add <code>def revoke_approvals(self, task_id: str) -> None</code>: <code>self._overrides.pop(task_id, None)</code>.</li>
+                <li>In <code>check()</code>, just before the final approval raise: <code>if card.capability_id in self._overrides.get(envelope.task_id, set()): return</code>.</li>
+              </ul>
+              <div class="changes-title" style="margin-top:0.6rem">Changes — runtime.py</div>
+              <ul>
+                <li>Add to <code>__init__</code>: <code>self._pending: Dict[str, Dict] = {}</code>.</li>
+                <li>Change <code>execute_graph</code> signature to accept <code>completed_so_far: Optional[Dict[str, Any]] = None</code>. On entry: <code>completed: Dict[str, Any] = dict(completed_so_far or {})</code>.</li>
+                <li>Inside <code>execute_graph</code>, in the <code>run_one</code> inner function, catch <code>ApprovalRequiredError</code>, attach <code>.graph = graph</code> and <code>.completed = dict(completed)</code> to the exception, then re-raise.</li>
+                <li>In <code>invoke</code>, in the <code>ApprovalRequiredError</code> except block, save: <code>self._pending[envelope.task_id] = {"envelope": envelope, "graph": exc.graph, "completed": exc.completed, "capability_id": exc.details.get("capability_id")}</code>.</li>
+                <li>Add <code>async def resume_after_approval(self, task_id: str, approver_id: str) -> Dict[str, Any]</code> — see snippet.</li>
+              </ul>
+              <div class="changes-title" style="margin-top:0.6rem">Changes — server.py</div>
+              <ul>
+                <li>Add <code>POST /uap/tasks/{task_id}/approve</code> endpoint. Body: <code>{"approver_id": str}</code>. Calls <code>runtime.resume_after_approval(task_id, approver_id)</code>. Returns result directly.</li>
+              </ul>
+            </div>
+            <pre class="code-block"><code><span class="cmt"># runtime.py — resume_after_approval</span>
+<span class="kw">async def</span> <span class="fn">resume_after_approval</span>(
+    <span class="kw">self</span>, task_id: <span class="ty">str</span>, approver_id: <span class="ty">str</span>
+) -&gt; <span class="ty">Dict</span>[<span class="ty">str</span>, <span class="ty">Any</span>]:
+    <span class="kw">if</span> task_id <span class="kw">not in</span> <span class="kw">self</span>._pending:
+        <span class="kw">raise</span> UAPError(
+            code=<span class="str">"TASK_NOT_FOUND"</span>,
+            message=<span class="str">f"No pending approval for task {task_id}"</span>,
+            recoverable=<span class="kw">False</span>, safe_retry=<span class="kw">False</span>,
+        )
+    p = <span class="kw">self</span>._pending.pop(task_id)
+    envelope, graph, completed = p[<span class="str">"envelope"</span>], p[<span class="str">"graph"</span>], p[<span class="str">"completed"</span>]
+    cap_id = p[<span class="str">"capability_id"</span>]
+
+    <span class="kw">self</span>.policy_engine.grant_approval(task_id, cap_id)
+    <span class="kw">await self</span>.emit(envelope, <span class="str">"approval.granted"</span>, {
+        <span class="str">"approver_id"</span>: approver_id, <span class="str">"capability_id"</span>: cap_id,
+    })
+    <span class="kw">try</span>:
+        result = <span class="kw">await self</span>.execute_graph(envelope, graph, completed_so_far=completed)
+        <span class="kw">self</span>.tasks[task_id] = {<span class="str">"status"</span>: <span class="str">"completed"</span>, <span class="str">"result"</span>: result}
+        <span class="kw">await self</span>.emit(envelope, <span class="str">"task.completed"</span>, {<span class="str">"result"</span>: result})
+        <span class="kw">return</span> {<span class="str">"task_id"</span>: task_id, <span class="str">"status"</span>: <span class="str">"completed"</span>, <span class="str">"result"</span>: result}
+    <span class="kw">except</span> UAPError <span class="kw">as</span> exc:
+        <span class="kw">self</span>.tasks[task_id] = {<span class="str">"status"</span>: <span class="str">"failed"</span>, <span class="str">"error"</span>: exc.to_dict()}
+        <span class="kw">await self</span>.emit(envelope, <span class="str">"task.failed"</span>, exc.to_dict())
+        <span class="kw">return</span> {<span class="str">"task_id"</span>: task_id, <span class="str">"status"</span>: <span class="str">"failed"</span>, <span class="str">"error"</span>: exc.to_dict()}
+    <span class="kw">finally</span>:
+        <span class="kw">self</span>.policy_engine.revoke_approvals(task_id)</code></pre>
+            <div class="accept"><strong>Accept:</strong> POST a task where <code>email.send</code> has <code>requires_approval=True</code>. Verify response is <code>status: waiting_for_approval</code>. POST <code>{"approver_id":"admin"}</code> to <code>/uap/tasks/{id}/approve</code>. Verify response is <code>status: completed</code> and <code>approval.granted</code> event appears in history.</div>
+          </div>
+        </article>
+
+        <!-- T2.2 -->
+        <article class="task p1" id="t2-2">
+          <div class="task-hd">
+            <span class="task-id">T2.2</span>
+            <h2 class="task-title">Task Cancellation</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/runtime.py</span>
+              <span class="fc">src/uap/server.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> <code>task.cancelled</code> is listed as a terminal event in <code>EventBus.subscribe()</code> but there is no mechanism to set it. A running task cannot be stopped.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Add to <code>UAPRuntime.__init__</code>: <code>self._cancel: Dict[str, asyncio.Event] = {}</code>.</li>
+                <li>In <code>invoke</code>, immediately after creating the task entry: <code>self._cancel[envelope.task_id] = asyncio.Event()</code>.</li>
+                <li>In <code>execute_graph</code>, at the top of the <code>while pending:</code> loop, add: <code>if self._cancel.get(envelope.task_id, asyncio.Event()).is_set(): raise UAPError(code="TASK_CANCELLED", message="Task cancelled by client", recoverable=False, safe_retry=False)</code>.</li>
+                <li>In <code>invoke</code>, add a dedicated <code>except UAPError as exc</code> branch that checks <code>exc.code == "TASK_CANCELLED"</code> and emits <code>task.cancelled</code> (not <code>task.failed</code>).</li>
+                <li>Add <code>def cancel(self, task_id: str) -> bool</code>: sets the event, returns False if task_id unknown.</li>
+                <li>In <code>server.py</code>, add <code>DELETE /uap/tasks/{task_id}</code> that calls <code>runtime.cancel(task_id)</code>. Returns 404 if cancel returns False.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> Register a slow capability (<code>await asyncio.sleep(5)</code>). Submit a task. Immediately <code>DELETE /uap/tasks/{id}</code>. Verify the task status becomes <code>cancelled</code> and <code>task.cancelled</code> appears in event history (not <code>task.failed</code>).</div>
+          </div>
+        </article>
+
+        <!-- T2.3 -->
+        <article class="task p1" id="t2-3">
+          <div class="task-hd">
+            <span class="task-id">T2.3</span>
+            <h2 class="task-title">Explicit DAG Cycle Detection</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/runtime.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> Current code conflates cycles and missing dependencies in <code>PLAN_CYCLE_OR_MISSING_DEPENDENCY</code>. The spec (T1.2) defines these as separate error codes. Cycle detection needs to be explicit and upfront, before any execution begins.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Add module-level function <code>_detect_cycle(nodes: List[TaskNode]) -> bool</code> using DFS (see snippet).</li>
+                <li>Add module-level function <code>_check_missing_deps(nodes: List[TaskNode]) -> Optional[str]</code> — returns the first unknown dep ID or None if clean.</li>
+                <li>In <code>execute_graph</code>, before the <code>while pending:</code> loop: call <code>_detect_cycle</code> → raise <code>PLAN_GRAPH_CYCLE</code> if True; call <code>_check_missing_deps</code> → raise <code>PLAN_MISSING_DEPENDENCY</code> if non-None.</li>
+                <li>Change the <code>if not ready:</code> error to code <code>PLAN_MISSING_DEPENDENCY</code> with message "Unresolvable dependency — check for missing nodes." (This is now a safety net, not primary detection.)</li>
+              </ul>
+            </div>
+            <pre class="code-block"><code><span class="kw">def</span> <span class="fn">_detect_cycle</span>(nodes: <span class="ty">List</span>[<span class="ty">TaskNode</span>]) -&gt; <span class="ty">bool</span>:
+    node_ids = {n.id <span class="kw">for</span> n <span class="kw">in</span> nodes}
+    <span class="cmt"># 0 = unvisited, 1 = in-stack (gray), 2 = done (black)</span>
+    state: <span class="ty">Dict</span>[<span class="ty">str</span>, <span class="ty">int</span>] = {n.id: <span class="num">0</span> <span class="kw">for</span> n <span class="kw">in</span> nodes}
+    adj = {n.id: [d <span class="kw">for</span> d <span class="kw">in</span> n.depends_on <span class="kw">if</span> d <span class="kw">in</span> node_ids] <span class="kw">for</span> n <span class="kw">in</span> nodes}
+
+    <span class="kw">def</span> <span class="fn">visit</span>(v: <span class="ty">str</span>) -&gt; <span class="ty">bool</span>:
+        state[v] = <span class="num">1</span>
+        <span class="kw">for</span> u <span class="kw">in</span> adj[v]:
+            <span class="kw">if</span> state[u] == <span class="num">1</span>:          <span class="cmt"># back edge = cycle</span>
+                <span class="kw">return True</span>
+            <span class="kw">if</span> state[u] == <span class="num">0</span> <span class="kw">and</span> visit(u):
+                <span class="kw">return True</span>
+        state[v] = <span class="num">2</span>
+        <span class="kw">return False</span>
+
+    <span class="kw">return</span> any(visit(n.id) <span class="kw">for</span> n <span class="kw">in</span> nodes <span class="kw">if</span> state[n.id] == <span class="num">0</span>)</code></pre>
+            <div class="accept"><strong>Accept:</strong> Submit a graph where node A <code>depends_on: ["B"]</code> and node B <code>depends_on: ["A"]</code>. Verify error code is <code>PLAN_GRAPH_CYCLE</code>. Submit a graph where node A <code>depends_on: ["nonexistent"]</code>. Verify error code is <code>PLAN_MISSING_DEPENDENCY</code>.</div>
+          </div>
+        </article>
+
+        <!-- T2.4 -->
+        <article class="task p1" id="t2-4">
+          <div class="task-hd">
+            <span class="task-id">T2.4</span>
+            <h2 class="task-title">Node-Level Timeouts via asyncio.wait_for</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/runtime.py</span>
+              <span class="fc">src/uap/models.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> A capability handler that hangs — network call, infinite loop, awaiting a resource — hangs the entire task with no recovery. <code>envelope.constraints.latency_ms</code> exists but is never enforced.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Add <code>node_timeout_ms: Optional[int] = None</code> to the <code>Constraints</code> dataclass in <code>models.py</code>. Use it as a per-node override; fall back to <code>latency_ms</code>; fall back to a hard floor of <code>30_000</code>ms.</li>
+                <li>In <code>execute_node</code>, compute <code>timeout_s = (envelope.constraints.node_timeout_ms or envelope.constraints.latency_ms or 30_000) / 1000</code>.</li>
+                <li>If the handler is a regular function (not a coroutine), wrap it: <code>loop = asyncio.get_event_loop(); coro = loop.run_in_executor(None, registered.handler, input_value, envelope)</code>. If it's a coroutine, use it directly.</li>
+                <li>Wrap the call: <code>raw = await asyncio.wait_for(coro, timeout=timeout_s)</code>.</li>
+                <li>Catch <code>asyncio.TimeoutError</code> and raise <code>UAPError(code="CAPABILITY_TIMEOUT", message=f"...", recoverable=True, safe_retry=True, retry_after_ms=int(timeout_s * 2000))</code>.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> Register a capability whose handler calls <code>time.sleep(60)</code>. Set <code>constraints.latency_ms: 200</code> in the envelope. Task must fail with <code>CAPABILITY_TIMEOUT</code> within ~500ms.</div>
+          </div>
+        </article>
+
+        <!-- T2.5 -->
+        <article class="task p1" id="t2-5">
+          <div class="task-hd">
+            <span class="task-id">T2.5</span>
+            <h2 class="task-title">Version Negotiation</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/models.py</span>
+              <span class="fc">src/uap/runtime.py</span>
+              <span class="fc">src/uap/server.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> The <code>uap</code> field on every envelope is parsed but never checked. A client sending <code>"uap": "99.0"</code> proceeds as if the version is supported.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Add to <code>models.py</code>: <code>SUPPORTED_UAP_VERSIONS: frozenset = frozenset({"0.1", "1.0"})</code> and <code>UAP_RUNTIME_VERSION = "0.1"</code> and <code>UAP_FEATURES = ["dag_execution", "policy_enforcement", "sse_events", "provenance", "field_masking", "approval_lifecycle", "task_cancellation", "version_negotiation"]</code>.</li>
+                <li>In <code>runtime.invoke</code>, immediately after parsing the envelope (before emitting <code>task.accepted</code>): check <code>if envelope.uap not in SUPPORTED_UAP_VERSIONS</code> and raise <code>ValidationError(code="UNSUPPORTED_VERSION", message=f"UAP version {envelope.uap!r} is not supported. Supported: {sorted(SUPPORTED_UAP_VERSIONS)}", recoverable=False, safe_retry=False)</code>.</li>
+                <li>In <code>server.py</code>, add <code>GET /uap/version</code> endpoint returning <code>{"protocol":"uap","version":UAP_RUNTIME_VERSION,"supported_versions":sorted(SUPPORTED_UAP_VERSIONS),"features":UAP_FEATURES}</code>.</li>
+                <li>Update <code>GET /health</code> to include <code>"uap_version": UAP_RUNTIME_VERSION</code>.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>GET /uap/version</code> returns all four fields. POST a task with <code>"uap":"99.0"</code> — verify response is <code>{"status":"failed","error":{"code":"UNSUPPORTED_VERSION"}}</code>. Conformance vector 13 passes.</div>
+          </div>
+        </article>
+
+        <!-- T2.6 -->
+        <article class="task p2" id="t2-6">
+          <div class="task-hd">
+            <span class="task-id">T2.6</span>
+            <h2 class="task-title">SSE Event IDs and Last-Event-ID Reconnect</h2>
+            <span class="badge p2">P2</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/server.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> The SSE generator emits only <code>event:</code> and <code>data:</code> lines. No <code>id:</code> line means clients cannot use <code>Last-Event-ID</code> to reconnect mid-stream without re-receiving every event from the beginning.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Import <code>Request</code> from <code>fastapi</code>.</li>
+                <li>Change <code>stream_events(task_id: str)</code> to <code>stream_events(task_id: str, request: Request)</code>.</li>
+                <li>Extract <code>last_id = request.headers.get("last-event-id")</code>.</li>
+                <li>In <code>generate()</code>: replay history, skipping all events up to and including the one with <code>event_id == last_id</code> when <code>last_id</code> is set. Then continue with live subscription (call a new <code>subscribe_live</code> method on EventBus, or filter the existing <code>subscribe</code> to skip already-yielded history).</li>
+                <li>Add <code>id: {event.event_id}\n</code> before each <code>event:</code> line in the generator.</li>
+                <li>Caution: the current <code>EventBus.subscribe()</code> replays history itself. Refactor or wrap to avoid double-replay when reconnecting with <code>last_id</code>.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> Subscribe to a task's SSE stream. Disconnect after receiving the second event. Reconnect with <code>Last-Event-ID: {second_event_id}</code>. Verify the reconnect response starts from the third event, not the first.</div>
+          </div>
+        </article>
+
+      </div><!-- /tasks phase 2 -->
+    </section>
+
+    <!-- ════════════════════════════════════════════════ -->
+    <!-- PHASE 3 -->
+    <!-- ════════════════════════════════════════════════ -->
+    <section id="phase-3" data-section="3">
+      <div class="phase-hd">
+        <span class="phase-num">Phase 3</span>
+        <span class="phase-name">Quality &amp; Correctness</span>
+        <span class="phase-goal">Two bugs in the current source are silent failures. Fix those first. Then tighten CI and type checking so new bugs don't survive a push.</span>
+      </div>
+
+      <div class="tasks">
+
+        <!-- T3.1 -->
+        <article class="task p0" id="t3-1">
+          <div class="task-hd">
+            <span class="task-id">T3.1</span>
+            <h2 class="task-title">Fix Missing Any Import in policy.py</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/policy.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> Line 1 of <code>policy.py</code> imports <code>from typing import Dict, Iterable, List, Optional</code>. Line 24 uses <code>Optional[Any]</code> in the type signature of <code>check()</code>. <code>Any</code> is not imported. This is a latent <code>NameError</code> that Python's lazy annotation evaluation currently masks at runtime but will surface under <code>from __future__ import annotations</code> or <code>mypy</code>. <code>Iterable</code> is imported but never used.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Replace the import line with: <code>from typing import Any, Dict, List, Optional, Set</code> (add <code>Any</code> and <code>Set</code> for T2.1, remove <code>Iterable</code>).</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>ruff check src/uap/policy.py</code> exits 0. <code>python -c "from uap.policy import PolicyEngine; import inspect; inspect.signature(PolicyEngine().check)"</code> succeeds without NameError.</div>
+          </div>
+        </article>
+
+        <!-- T3.2 -->
+        <article class="task p0" id="t3-2">
+          <div class="task-hd">
+            <span class="task-id">T3.2</span>
+            <h2 class="task-title">Fix ValidationError Positional Constructor Calls</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/validation.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> Lines 23–28 and elsewhere in <code>validation.py</code> call <code>raise ValidationError("INVALID_ENVELOPE", "uap must be a string", True, False)</code> with positional arguments. <code>ValidationError</code> inherits from the <code>UAPError</code> dataclass, whose field order is <code>(code, message, recoverable, safe_retry, ...)</code>. This works today but silently breaks if <code>UAPError</code>'s field order changes. The rest of the codebase uses keyword args exclusively.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Find all positional <code>ValidationError(...)  raise</code> calls in <code>validation.py</code> (there are 8: lines 23, 25, 27, 34, 36, 52, 54, 57 approximately). Convert each to keyword form.</li>
+                <li>Example: <code>raise ValidationError("INVALID_ENVELOPE", "uap must be a string", True, False)</code> → <code>raise ValidationError(code="INVALID_ENVELOPE", message="uap must be a string", recoverable=True, safe_retry=False)</code>.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>grep -n 'ValidationError("[A-Z]' src/uap/validation.py</code> returns no matches (all positional calls removed). All tests pass.</div>
+          </div>
+        </article>
+
+        <!-- T3.3 -->
+        <article class="task p0" id="t3-3">
+          <div class="task-hd">
+            <span class="task-id">T3.3</span>
+            <h2 class="task-title">Enhanced CI Workflow</h2>
+            <span class="badge p0">P0</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">.github/workflows/test.yml</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> The current workflow runs only <code>python -m unittest discover -s tests</code> on Python 3.12. No linting, no type checking, no integration test, no multi-version matrix. A type error or linting regression is invisible until a human notices it.</div>
+            <div class="changes">
+              <div class="changes-title">Replace the full file with</div>
+            </div>
+            <pre class="code-block"><code><span class="kw">name</span>: CI
+<span class="kw">on</span>:
+  <span class="kw">push</span>:
+    <span class="kw">branches</span>: [main]
+  <span class="kw">pull_request</span>:
+
+<span class="kw">jobs</span>:
+  <span class="kw">test</span>:
+    <span class="kw">runs-on</span>: ubuntu-latest
+    <span class="kw">strategy</span>:
+      <span class="kw">matrix</span>:
+        <span class="kw">python-version</span>: [<span class="str">'3.10'</span>, <span class="str">'3.11'</span>, <span class="str">'3.12'</span>]
+    <span class="kw">steps</span>:
+      - <span class="kw">uses</span>: actions/checkout@v4
+      - <span class="kw">uses</span>: actions/setup-python@v5
+        <span class="kw">with</span>:
+          <span class="kw">python-version</span>: ${{ matrix.python-version }}
+      - <span class="kw">name</span>: Install
+        <span class="kw">run</span>: pip install -e <span class="str">'.[dev,server]'</span>
+      - <span class="kw">name</span>: Lint
+        <span class="kw">run</span>: ruff check src tests examples
+      - <span class="kw">name</span>: Unit tests
+        <span class="kw">run</span>: python -m unittest discover -s tests -v
+      - <span class="kw">name</span>: Integration test
+        <span class="kw">run</span>: python examples/integration_test.py</code></pre>
+            <div class="accept"><strong>Accept:</strong> Push to main. GitHub Actions shows three parallel jobs (3.10, 3.11, 3.12) all green. A deliberate import error in <code>src/uap/policy.py</code> causes the lint step to fail before tests run.</div>
+          </div>
+        </article>
+
+        <!-- T3.4 -->
+        <article class="task p1" id="t3-4">
+          <div class="task-hd">
+            <span class="task-id">T3.4</span>
+            <h2 class="task-title">Add mypy and ruff Configuration</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">pyproject.toml</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> No mypy configuration exists. The <code>[tool.ruff]</code> section only sets <code>line-length</code> and <code>src</code>. No lint rules are selected, so <code>ruff check</code> does nothing useful.</div>
+            <div class="changes">
+              <div class="changes-title">Changes — append to pyproject.toml</div>
+              <ul>
+                <li>Add <code>mypy</code> to the <code>dev</code> optional dependencies alongside <code>pytest</code> and <code>ruff</code>.</li>
+                <li>Add <code>[tool.mypy]</code> section: <code>python_version = "3.10"</code>, <code>warn_return_any = true</code>, <code>warn_unused_imports = true</code>, <code>ignore_missing_imports = true</code>, <code>no_implicit_optional = true</code>.</li>
+                <li>Add <code>[tool.ruff.lint]</code>: <code>select = ["E","F","W","I","UP"]</code>, <code>ignore = ["E501"]</code>.</li>
+                <li>Add <code>[tool.ruff.lint.isort]</code>: <code>known_first_party = ["uap"]</code>.</li>
+                <li>After adding, run <code>mypy src/uap</code> and fix all reported errors. The T3.1 fix resolves the most obvious one.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>mypy src/uap</code> exits 0. <code>ruff check src tests</code> exits 0. Both commands added to the CI workflow in T3.3.</div>
+          </div>
+        </article>
+
+        <!-- T3.5 -->
+        <article class="task p2" id="t3-5">
+          <div class="task-hd">
+            <span class="task-id">T3.5</span>
+            <h2 class="task-title">Strict Scope Enforcement Mode in PolicyEngine</h2>
+            <span class="badge p2">P2</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">src/uap/policy.py</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> Line 74 of <code>policy.py</code>: <code>if envelope.actor.scopes and missing:</code> — the <code>and</code> means scope validation is silently skipped when the actor presents an empty <code>scopes</code> list. This is intentional for demo mode but is a production security hole. The condition should be configurable, not hardcoded to the permissive path.</div>
+            <div class="changes">
+              <div class="changes-title">Changes</div>
+              <ul>
+                <li>Add <code>__init__(self, strict_scopes: bool = False) -> None</code> to <code>PolicyEngine</code> (merging with the <code>__init__</code> added in T2.1). Store as <code>self.strict_scopes = strict_scopes</code>.</li>
+                <li>Change the scope check condition to: <code>if (envelope.actor.scopes or self.strict_scopes) and missing:</code>.</li>
+                <li>Update docstring: "Set <code>strict_scopes=True</code> in production to enforce permissions even when the actor presents an empty scope list."</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>PolicyEngine(strict_scopes=True).check(envelope_with_empty_scopes, card_with_permissions, None)</code> raises <code>PolicyDeniedError(code="MISSING_PERMISSION")</code>. <code>PolicyEngine(strict_scopes=False).check(same_args)</code> does not raise.</div>
+          </div>
+        </article>
+
+      </div><!-- /tasks phase 3 -->
+    </section>
+
+    <!-- ════════════════════════════════════════════════ -->
+    <!-- PHASE 4 -->
+    <!-- ════════════════════════════════════════════════ -->
+    <section id="phase-4" data-section="4">
+      <div class="phase-hd">
+        <span class="phase-num">Phase 4</span>
+        <span class="phase-name">Ecosystem &amp; Demos</span>
+        <span class="phase-goal">A protocol that nobody can try in 60 seconds will not get tried. These tasks make the first impression match the quality of the implementation.</span>
+      </div>
+
+      <div class="tasks">
+
+        <!-- T4.1 -->
+        <article class="task p1" id="t4-1">
+          <div class="task-hd">
+            <span class="task-id">T4.1</span>
+            <h2 class="task-title">Community Files</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc new">+ CONTRIBUTING.md</span>
+              <span class="fc new">+ SECURITY.md</span>
+              <span class="fc new">+ CHANGELOG.md</span>
+              <span class="fc new">+ ROADMAP.md</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> None of these files exist. A repo without them reads as "generated, not maintained" to a developer evaluating it for adoption.</div>
+            <div class="changes">
+              <div class="changes-title">Required content</div>
+              <ul>
+                <li><code>CONTRIBUTING.md</code>: dev setup (<code>python -m venv .venv &amp;&amp; source .venv/bin/activate &amp;&amp; pip install -e '.[dev,server]'</code>), running tests (<code>make test</code>), linting (<code>ruff check src tests</code>), how to add a capability adapter (reference <code>src/uap/adapters/</code>), how to add a conformance vector (reference <code>conformance/test-vectors/</code>), PR checklist (tests pass, ruff clean, vector added for new behaviour).</li>
+                <li><code>SECURITY.md</code>: preferred contact (GitHub Security Advisories), in-scope threats (prompt injection, capability escalation, data leakage via missing field masking, replay of approval tokens), out-of-scope (DDoS, physical access), response SLA (acknowledge within 72 hours).</li>
+                <li><code>CHANGELOG.md</code>: v0.1.0-alpha entry listing all implemented capabilities: runtime, policy engine, DAG execution, context compaction, provenance, SSE events, 5 adapters (MCP/OpenAPI/A2A/AG-UI/CloudEvents).</li>
+                <li><code>ROADMAP.md</code>: v0.1 → v0.2 (JWT-backed delegation, real MCP server bridge, PyPI publish) → v1.0 (stable spec, full conformance suite, multi-runtime interop demo).</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> All four files exist and are non-empty. <code>SECURITY.md</code> contains "GitHub Security Advisories". <code>CONTRIBUTING.md</code> contains <code>pip install -e</code>.</div>
+          </div>
+        </article>
+
+        <!-- T4.2 -->
+        <article class="task p1" id="t4-2">
+          <div class="task-hd">
+            <span class="task-id">T4.2</span>
+            <h2 class="task-title">60-Second Quickstart Example</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc new">+ examples/quickstart/minimal.py</span>
+              <span class="fc new">+ examples/quickstart/task.json</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> There is no path from "git clone" to "it works" in under 5 minutes. <code>examples/local_runtime.py</code> exists but is not a quickstart — it's a demo with finance workflow assumptions.</div>
+            <div class="changes">
+              <div class="changes-title">minimal.py requirements</div>
+              <ul>
+                <li>No arguments. Runnable as <code>python examples/quickstart/minimal.py</code> with no server and no environment setup beyond <code>pip install -e .</code>.</li>
+                <li>Creates a <code>UAPRuntime</code>, registers one capability (<code>greet.hello</code>) that returns <code>{"message": "Hello, UAP!", "version": "0.1"}</code>.</li>
+                <li>Submits a minimal envelope with <code>policy.allowed_tools: ["greet.hello"]</code> and <code>intent.goal: "hello"</code>.</li>
+                <li>Prints: task ID, status, result, and the list of emitted event types.</li>
+                <li>Expected output (exactly): <code>Task tsk_xxxx completed · result: {'message': 'Hello, UAP!', 'version': '0.1'} · events: task.accepted → plan.proposed → tool.started → tool.completed → partial.result → task.completed</code>.</li>
+              </ul>
+              <div class="changes-title" style="margin-top:0.6rem">task.json requirements</div>
+              <ul>
+                <li>A complete, valid envelope targeting <code>greet.hello</code> that works with the demo server (<code>uap-server</code> with the demo <code>invoice.list_overdue</code> and <code>email.draft</code> capabilities pre-registered).</li>
+                <li>Include a comment block at top explaining the <code>curl</code> invocation.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>python examples/quickstart/minimal.py</code> exits 0 and prints a line containing "completed". <code>curl -s -X POST http://localhost:8000/uap/tasks -H "Content-Type: application/json" -d @examples/quickstart/task.json | python -m json.tool</code> returns <code>"status": "completed"</code>.</div>
+          </div>
+        </article>
+
+        <!-- T4.3 -->
+        <article class="task p2" id="t4-3">
+          <div class="task-hd">
+            <span class="task-id">T4.3</span>
+            <h2 class="task-title">MCP Bridge Demo</h2>
+            <span class="badge p2">P2</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc new">+ examples/mcp-bridge/demo.py</span>
+              <span class="fc new">+ examples/mcp-bridge/README.md</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> The MCP adapter (<code>src/uap/adapters/mcp.py</code>) converts MCP tool descriptors to UAP capability cards, but there is no runnable demo. The adapter's value is invisible.</div>
+            <div class="changes">
+              <div class="changes-title">demo.py requirements</div>
+              <ul>
+                <li>Self-contained — no external MCP server required. Define a realistic list of MCP tool descriptors matching the MCP <code>tools/list</code> response format: <code>name</code>, <code>description</code>, <code>inputSchema</code> (with <code>type</code>, <code>properties</code>, <code>required</code>).</li>
+                <li>Use at least 3 tools: <code>search_docs</code>, <code>create_issue</code>, <code>list_repos</code> — realistic GitHub/docs tool shapes.</li>
+                <li>Convert all three with <code>mcp_tools_to_capabilities(tools, server_name="github")</code>.</li>
+                <li>Register the resulting cards in a <code>UAPRuntime</code> with stub handlers that return plausible fake data.</li>
+                <li>Submit a task with <code>intent.goal: "list repositories"</code> and verify the task routes to <code>github.list_repos</code>.</li>
+                <li>Print the provenance record, showing <code>capability_id: "github.list_repos"</code> and the SHA-256 digests.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> <code>python examples/mcp-bridge/demo.py</code> exits 0. Output contains <code>capability_id: github.list_repos</code> and a 64-character hex string for <code>output_digest</code>.</div>
+          </div>
+        </article>
+
+        <!-- T4.4 -->
+        <article class="task p1" id="t4-4">
+          <div class="task-hd">
+            <span class="task-id">T4.4</span>
+            <h2 class="task-title">README Overhaul</h2>
+            <span class="badge p1">P1</span>
+          </div>
+          <div class="task-body">
+            <div class="files">
+              <span class="fc">README.md</span>
+            </div>
+            <div class="problem"><strong>Problem:</strong> No CI badge, no comparison table, no expected output in the quickstart, no positioning statement. A developer who lands on the repo cannot understand where UAP fits in 30 seconds.</div>
+            <div class="changes">
+              <div class="changes-title">Changes (in order)</div>
+              <ul>
+                <li><strong>Badges row</strong> at top: CI status (GitHub Actions badge), Python 3.10+, License Apache-2.0, Version 0.1.0-alpha.</li>
+                <li><strong>Positioning tagline</strong> — add directly under the h1, before any other prose: <em>"UAP is not a replacement for MCP, A2A, or AG-UI — it governs and coordinates them. It adds policy enforcement, context budgeting, provenance, and a typed task lifecycle to whatever agent infrastructure you already have."</em></li>
+                <li><strong>Comparison table</strong> — add a new section "How UAP relates to other protocols":
+                  MCP → "UAP wraps MCP tools with policy, context budgets, and provenance";
+                  A2A → "UAP treats remote A2A agents as delegated capability nodes";
+                  AG-UI → "UAP lifecycle events project into AG-UI event streams";
+                  LangGraph/CrewAI → "UAP can govern graph execution as a policy control plane";
+                  OpenAPI → "UAP converts OpenAPI operations into policy-aware capability cards";
+                  OpenTelemetry → "UAP provenance records integrate with OTel trace/span systems."</li>
+                <li><strong>Quickstart with expected output</strong> — the existing quickstart shows commands but no output. Add the expected JSON response after the curl command, truncated to key fields.</li>
+                <li><strong>Link to spec</strong>: add "Full specification: <code>spec/v0.1/index.md</code>" in the quickstart section.</li>
+                <li><strong>Architecture diagram</strong>: add a concise ASCII diagram showing the 5-step runtime flow: <code>POST envelope → validate → plan DAG → [policy check → execute] × N → compact → record provenance → emit events → return result</code>.</li>
+              </ul>
+            </div>
+            <div class="accept"><strong>Accept:</strong> The README renders correctly on GitHub (no broken badge URLs). The comparison table appears. The quickstart section includes a JSON block showing <code>"status": "completed"</code>. The word "coordinates" appears in the positioning tagline.</div>
+          </div>
+        </article>
+
+      </div><!-- /tasks phase 4 -->
+    </section>
+
+  </main>
+</div><!-- /layout -->
+
+<script>
+(function() {
+  var sections = document.querySelectorAll('.phase[data-section]');
+  var layers   = document.querySelectorAll('.layer[data-ph]');
+
+  function setActive(ph) {
+    layers.forEach(function(l) {
+      l.classList.toggle('active', l.getAttribute('data-ph') === String(ph));
+    });
+  }
+
+  function onScroll() {
+    var scrollMid = window.scrollY + window.innerHeight * 0.4;
+    var current = '1';
+    sections.forEach(function(s) {
+      if (s.offsetTop <= scrollMid) {
+        current = s.getAttribute('data-section');
+      }
+    });
+    setActive(current);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "11_field_masking",
+  "description": "Valid envelope requesting field masking in context request",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_11",
+    "actor": {
+      "agent_id": "agent_11"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "context_request": {
+      "fields": [
+        "invoice_id"
+      ]
+    }
+  },
+  "expect": {
+    "status": "completed"
+  }
+}

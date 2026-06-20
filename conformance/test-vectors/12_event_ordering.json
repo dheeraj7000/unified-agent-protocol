@@ -1,0 +1,23 @@
+{
+  "name": "12_event_ordering",
+  "description": "Valid envelope to test correct lifecycle event ordering",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_12",
+    "actor": {
+      "agent_id": "agent_12"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "policy": {
+      "allowed_tools": [
+        "invoice.list_overdue"
+      ]
+    }
+  },
+  "expect": {
+    "status": "completed"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "01_valid_minimal",
+  "description": "Minimal valid envelope that runs invoice.list_overdue",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_01",
+    "actor": {
+      "agent_id": "agent_01"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "policy": {
+      "allowed_tools": [
+        "invoice.list_overdue"
+      ]
+    }
+  },
+  "expect": {
+    "status": "completed"
+  }
+}

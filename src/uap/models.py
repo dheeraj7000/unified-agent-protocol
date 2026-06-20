@@ -49,6 +49,22 @@ class Constraints:
     max_cost_usd: Optional[float] = None
     max_context_tokens: int = 4000
     risk_level: str = "medium"
+    node_timeout_ms: Optional[int] = None
+
+
+SUPPORTED_UAP_VERSIONS = frozenset({"0.1", "1.0"})
+UAP_RUNTIME_VERSION = "0.1"
+UAP_FEATURES = [
+    "dag_execution",
+    "policy_enforcement",
+    "sse_events",
+    "provenance",
+    "field_masking",
+    "approval_lifecycle",
+    "task_cancellation",
+    "version_negotiation",
+]
+
 
 
 @dataclass

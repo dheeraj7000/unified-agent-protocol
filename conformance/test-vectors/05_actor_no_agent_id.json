@@ -1,0 +1,17 @@
+{
+  "name": "05_actor_no_agent_id",
+  "description": "Envelope where actor lacks agent_id",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_05",
+    "actor": {},
+    "intent": {
+      "goal": "list overdue invoices"
+    }
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "INVALID_ACTOR"
+  }
+}

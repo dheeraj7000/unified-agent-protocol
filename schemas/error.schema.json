@@ -34,5 +34,6 @@
     "details": {
       "type": "object"
     }
-  }
+  },
+  "additionalProperties": true
 }

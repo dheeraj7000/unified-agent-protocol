@@ -1,0 +1,24 @@
+{
+  "name": "09_approval_required",
+  "description": "Envelope targeting a tool requiring approval",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_09",
+    "actor": {
+      "agent_id": "agent_09"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "policy": {
+      "requires_approval": [
+        "invoice.list_overdue"
+      ]
+    }
+  },
+  "expect": {
+    "status": "waiting_for_approval",
+    "error.code": "APPROVAL_REQUIRED"
+  }
+}

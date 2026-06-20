@@ -1,0 +1,34 @@
+{
+  "name": "07_tool_not_allowed",
+  "description": "Envelope where target tool is not in allowed_tools list",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_07",
+    "actor": {
+      "agent_id": "agent_07"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "policy": {
+      "allowed_tools": [
+        "email.draft"
+      ]
+    },
+    "execution": {
+      "graph": {
+        "nodes": [
+          {
+            "id": "n1",
+            "capability": "invoice.list_overdue"
+          }
+        ]
+      }
+    }
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "TOOL_NOT_ALLOWED"
+  }
+}

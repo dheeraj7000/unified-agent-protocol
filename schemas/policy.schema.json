@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/policy.schema.json",
+  "title": "UAP Policy",
+  "type": "object",
+  "properties": {
+    "requires_approval": { "type": "array", "items": { "type": "string" } },
+    "data_classes": { "type": "array", "items": { "type": "string" } },
+    "allowed_tools": { "type": "array", "items": { "type": "string" } },
+    "denied_tools": { "type": "array", "items": { "type": "string" } },
+    "max_risk": { "enum": ["low", "medium", "high", "critical"] }
+  },
+  "additionalProperties": false
+}

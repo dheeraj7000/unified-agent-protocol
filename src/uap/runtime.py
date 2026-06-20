@@ -8,11 +8,39 @@ from .capabilities import CapabilityRegistry
 from .context import ContextManager
 from .errors import ApprovalRequiredError, UAPError, ValidationError
 from .events import EventBus
-from .models import TaskEnvelope, TaskGraph, TaskNode, UAPEvent, new_id
+from .models import TaskEnvelope, TaskGraph, TaskNode, UAPEvent, new_id, SUPPORTED_UAP_VERSIONS
 from .planner import SimplePlanner
 from .policy import PolicyEngine
 from .provenance import ProvenanceStore
 from .validation import validate_envelope_minimal
+
+
+def _detect_cycle(nodes: List[TaskNode]) -> bool:
+    node_ids = {n.id for n in nodes}
+    # 0 = unvisited, 1 = in-stack (gray), 2 = done (black)
+    state: Dict[str, int] = {n.id: 0 for n in nodes}
+    adj = {n.id: [d for d in n.depends_on if d in node_ids] for n in nodes}
+
+    def visit(v: str) -> bool:
+        state[v] = 1
+        for u in adj[v]:
+            if state[u] == 1:          # back edge = cycle
+                return True
+            if state[u] == 0 and visit(u):
+                return True
+        state[v] = 2
+        return False
+
+    return any(visit(n.id) for n in nodes if state[n.id] == 0)
+
+
+def _check_missing_deps(nodes: List[TaskNode]) -> Optional[str]:
+    node_ids = {n.id for n in nodes}
+    for n in nodes:
+        for dep in n.depends_on:
+            if dep not in node_ids:
+                return dep
+    return None
 
 
 class UAPRuntime:
@@ -37,6 +65,8 @@ class UAPRuntime:
         self.provenance = provenance or ProvenanceStore()
         self.planner = SimplePlanner(self.registry)
         self.tasks: Dict[str, Dict[str, Any]] = {}
+        self._pending: Dict[str, Dict[str, Any]] = {}
+        self._cancel: Dict[str, asyncio.Event] = {}
 
     async def invoke(self, envelope_or_dict: TaskEnvelope | Dict[str, Any], graph: Optional[TaskGraph] = None) -> Dict[str, Any]:
         if isinstance(envelope_or_dict, dict):
@@ -73,8 +103,38 @@ class UAPRuntime:
             if isinstance(envelope_or_dict, TaskEnvelope)
             else TaskEnvelope.from_dict(envelope_or_dict)
         )
+
+        if envelope.uap not in SUPPORTED_UAP_VERSIONS:
+            exc = ValidationError(
+                code="UNSUPPORTED_VERSION",
+                message=f"UAP version {envelope.uap!r} is not supported. Supported: {sorted(SUPPORTED_UAP_VERSIONS)}",
+                recoverable=False,
+                safe_retry=False
+            )
+            trace_id = str(envelope.metadata.get("trace_id") or new_id("trc"))
+            envelope.metadata["trace_id"] = trace_id
+            self.tasks[envelope.task_id] = {"status": "failed", "error": exc.to_dict()}
+            await self.event_bus.publish(
+                UAPEvent(
+                    type="error.terminal",
+                    task_id=envelope.task_id,
+                    data=exc.to_dict(),
+                    trace_id=trace_id,
+                )
+            )
+            await self.event_bus.publish(
+                UAPEvent(
+                    type="task.failed",
+                    task_id=envelope.task_id,
+                    data=exc.to_dict(),
+                    trace_id=trace_id,
+                )
+            )
+            return {"task_id": envelope.task_id, "status": "failed", "error": exc.to_dict()}
+
         envelope.metadata.setdefault("trace_id", new_id("trc"))
         self.tasks[envelope.task_id] = {"status": "accepted", "result": None}
+        self._cancel[envelope.task_id] = asyncio.Event()
         await self.emit(envelope, "task.accepted", {"intent": envelope.intent.goal})
 
         # Support custom execution graph from envelope if provided
@@ -101,14 +161,25 @@ class UAPRuntime:
             return {"task_id": envelope.task_id, "status": "completed", "result": result}
         except ApprovalRequiredError as exc:
             self.tasks[envelope.task_id] = {"status": "waiting_for_approval", "error": exc.to_dict()}
+            self._pending[envelope.task_id] = {
+                "envelope": envelope,
+                "graph": exc.graph,
+                "completed": exc.completed,
+                "capability_id": exc.details.get("capability_id")
+            }
             await self.emit(envelope, "approval.requested", exc.to_dict())
             return {"task_id": envelope.task_id, "status": "waiting_for_approval", "error": exc.to_dict()}
         except UAPError as exc:
-            self.tasks[envelope.task_id] = {"status": "failed", "error": exc.to_dict()}
-            event_type = "error.recoverable" if exc.recoverable else "error.terminal"
-            await self.emit(envelope, event_type, exc.to_dict())
-            await self.emit(envelope, "task.failed", exc.to_dict())
-            return {"task_id": envelope.task_id, "status": "failed", "error": exc.to_dict()}
+            if exc.code == "TASK_CANCELLED":
+                self.tasks[envelope.task_id] = {"status": "cancelled", "error": exc.to_dict()}
+                await self.emit(envelope, "task.cancelled", exc.to_dict())
+                return {"task_id": envelope.task_id, "status": "cancelled", "error": exc.to_dict()}
+            else:
+                self.tasks[envelope.task_id] = {"status": "failed", "error": exc.to_dict()}
+                event_type = "error.recoverable" if exc.recoverable else "error.terminal"
+                await self.emit(envelope, event_type, exc.to_dict())
+                await self.emit(envelope, "task.failed", exc.to_dict())
+                return {"task_id": envelope.task_id, "status": "failed", "error": exc.to_dict()}
         except Exception as exc:  # pragma: no cover - safety net
             error = UAPError(code="UNHANDLED_ERROR", message=str(exc), recoverable=False, safe_retry=False)
             self.tasks[envelope.task_id] = {"status": "failed", "error": error.to_dict()}
@@ -116,18 +187,48 @@ class UAPRuntime:
             await self.emit(envelope, "task.failed", error.to_dict())
             return {"task_id": envelope.task_id, "status": "failed", "error": error.to_dict()}
 
-    async def execute_graph(self, envelope: TaskEnvelope, graph: TaskGraph) -> Dict[str, Any]:
-        completed: Dict[str, Any] = {}
-        pending: Dict[str, TaskNode] = {node.id: node for node in graph.nodes}
-        if not pending:
+    async def execute_graph(
+        self,
+        envelope: TaskEnvelope,
+        graph: TaskGraph,
+        completed_so_far: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        # Validate upfront
+        if _detect_cycle(graph.nodes):
+            raise UAPError(
+                code="PLAN_GRAPH_CYCLE",
+                message="Task graph contains a cycle",
+                recoverable=False,
+                safe_retry=False,
+            )
+        missing_dep = _check_missing_deps(graph.nodes)
+        if missing_dep is not None:
+            raise UAPError(
+                code="PLAN_MISSING_DEPENDENCY",
+                message=f"Task graph has missing dependency: {missing_dep}",
+                recoverable=False,
+                safe_retry=False,
+            )
+
+        completed: Dict[str, Any] = dict(completed_so_far or {})
+        pending: Dict[str, TaskNode] = {node.id: node for node in graph.nodes if node.id not in completed}
+        if not pending and not completed:
             return {"message": "No matching capability found", "artifacts": []}
 
         while pending:
+            if self._cancel.get(envelope.task_id, asyncio.Event()).is_set():
+                raise UAPError(
+                    code="TASK_CANCELLED",
+                    message="Task cancelled by client",
+                    recoverable=False,
+                    safe_retry=False,
+                )
+
             ready = [node for node in pending.values() if all(dep in completed for dep in node.depends_on)]
             if not ready:
                 raise UAPError(
-                    code="PLAN_CYCLE_OR_MISSING_DEPENDENCY",
-                    message="Task graph has a cycle or unresolved dependency",
+                    code="PLAN_MISSING_DEPENDENCY",
+                    message="Unresolvable dependency — check for missing nodes.",
                     recoverable=False,
                     safe_retry=False,
                 )
@@ -135,7 +236,12 @@ class UAPRuntime:
 
             async def run_one(node: TaskNode):
                 async with sem:
-                    return node.id, await self.execute_node(envelope, node, completed)
+                    try:
+                        return node.id, await self.execute_node(envelope, node, completed)
+                    except ApprovalRequiredError as exc:
+                        exc.graph = graph
+                        exc.completed = dict(completed)
+                        raise exc
 
             for node_id, output in await asyncio.gather(*(run_one(node) for node in ready)):
                 completed[node_id] = output
@@ -145,14 +251,32 @@ class UAPRuntime:
     async def execute_node(self, envelope: TaskEnvelope, node: TaskNode, completed: Dict[str, Any]) -> Any:
         registered = self.registry.get(node.capability)
         card = registered.card
-        self.policy_engine.check(envelope, card, self.registry)
+        self.policy_engine.check(envelope, card, self.registry, node=node)
         await self.emit(envelope, "tool.started", {"node_id": node.id, "capability_id": card.capability_id})
         input_value = dict(node.input)
         if completed:
-            input_value["previous_results"] = completed
-        raw = registered.handler(input_value, envelope)
-        if inspect.isawaitable(raw):
-            raw = await raw
+            input_value["previous_results"] = dict(completed)
+
+        # T2.4 Timeout settings
+        timeout_s = (envelope.constraints.node_timeout_ms or envelope.constraints.latency_ms or 30_000) / 1000.0
+
+        if not inspect.iscoroutinefunction(registered.handler):
+            loop = asyncio.get_event_loop()
+            coro = loop.run_in_executor(None, registered.handler, input_value, envelope)
+        else:
+            coro = registered.handler(input_value, envelope)
+
+        try:
+            raw = await asyncio.wait_for(coro, timeout=timeout_s)
+        except asyncio.TimeoutError:
+            raise UAPError(
+                code="CAPABILITY_TIMEOUT",
+                message=f"Capability {card.capability_id} timed out after {timeout_s}s",
+                recoverable=True,
+                safe_retry=True,
+                retry_after_ms=int(timeout_s * 2000),
+            )
+
         compact = self.context_manager.compact(
             raw,
             envelope.context_request,
@@ -176,3 +300,79 @@ class UAPRuntime:
                 trace_id=str(envelope.metadata.get("trace_id")),
             )
         )
+
+    async def resume_after_approval(
+        self, task_id: str, approver_id: str
+    ) -> Dict[str, Any]:
+        if task_id not in self._pending:
+            raise UAPError(
+                code="TASK_NOT_FOUND",
+                message=f"No pending approval for task {task_id}",
+                recoverable=False, safe_retry=False,
+            )
+        p = self._pending.pop(task_id)
+        envelope, graph, completed = p["envelope"], p["graph"], p["completed"]
+        cap_id = p["capability_id"]
+
+        self.policy_engine.grant_approval(task_id, cap_id)
+        await self.emit(envelope, "approval.granted", {
+            "approver_id": approver_id, "capability_id": cap_id,
+        })
+        try:
+            result = await self.execute_graph(envelope, graph, completed_so_far=completed)
+            self.tasks[task_id] = {"status": "completed", "result": result}
+            await self.emit(envelope, "task.completed", {"result": result})
+            return {"task_id": task_id, "status": "completed", "result": result}
+        except ApprovalRequiredError as exc:
+            self.tasks[task_id] = {"status": "waiting_for_approval", "error": exc.to_dict()}
+            self._pending[task_id] = {
+                "envelope": envelope,
+                "graph": exc.graph,
+                "completed": exc.completed,
+                "capability_id": exc.details.get("capability_id")
+            }
+            await self.emit(envelope, "approval.requested", exc.to_dict())
+            return {"task_id": task_id, "status": "waiting_for_approval", "error": exc.to_dict()}
+        except UAPError as exc:
+            if exc.code == "TASK_CANCELLED":
+                self.tasks[task_id] = {"status": "cancelled", "error": exc.to_dict()}
+                await self.emit(envelope, "task.cancelled", exc.to_dict())
+                return {"task_id": task_id, "status": "cancelled", "error": exc.to_dict()}
+            else:
+                self.tasks[task_id] = {"status": "failed", "error": exc.to_dict()}
+                event_type = "error.recoverable" if exc.recoverable else "error.terminal"
+                await self.emit(envelope, event_type, exc.to_dict())
+                await self.emit(envelope, "task.failed", exc.to_dict())
+                return {"task_id": task_id, "status": "failed", "error": exc.to_dict()}
+        except Exception as exc:
+            error = UAPError(code="UNHANDLED_ERROR", message=str(exc), recoverable=False, safe_retry=False)
+            self.tasks[task_id] = {"status": "failed", "error": error.to_dict()}
+            await self.emit(envelope, "error.terminal", error.to_dict())
+            await self.emit(envelope, "task.failed", error.to_dict())
+            return {"task_id": task_id, "status": "failed", "error": error.to_dict()}
+        finally:
+            self.policy_engine.revoke_approvals(task_id)
+
+    def cancel(self, task_id: str) -> bool:
+        if task_id not in self._cancel:
+            return False
+        self._cancel[task_id].set()
+        if task_id in self._pending:
+            p = self._pending.pop(task_id)
+            envelope = p["envelope"]
+            self.tasks[task_id] = {
+                "status": "cancelled",
+                "error": {
+                    "code": "TASK_CANCELLED",
+                    "message": "Task cancelled by client",
+                    "recoverable": False,
+                    "safe_retry": False
+                }
+            }
+            asyncio.create_task(self.emit(envelope, "task.cancelled", {
+                "code": "TASK_CANCELLED",
+                "message": "Task cancelled by client",
+                "recoverable": False,
+                "safe_retry": False
+            }))
+        return True

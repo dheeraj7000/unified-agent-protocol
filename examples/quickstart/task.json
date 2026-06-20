@@ -1,0 +1,15 @@
+{
+  "_comment": "To run this task against the local demo server: curl -s -X POST http://localhost:8000/uap/tasks -H 'Content-Type: application/json' -d @examples/quickstart/task.json",
+  "uap": "1.0",
+  "type": "task.invoke",
+  "task_id": "tsk_quickstart",
+  "actor": {
+    "agent_id": "agent_quickstart"
+  },
+  "intent": {
+    "goal": "Find overdue invoices and draft reminder emails"
+  },
+  "policy": {
+    "allowed_tools": ["invoice.list_overdue", "email.draft"]
+  }
+}

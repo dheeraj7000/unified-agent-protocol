@@ -1,0 +1,23 @@
+{
+  "name": "14_empty_graph",
+  "description": "Envelope with empty graph nodes",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_14",
+    "actor": {
+      "agent_id": "agent_14"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "execution": {
+      "graph": {
+        "nodes": []
+      }
+    }
+  },
+  "expect": {
+    "status": "completed"
+  }
+}

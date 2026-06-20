@@ -15,7 +15,23 @@
       "type": "string"
     },
     "type": {
-      "type": "string"
+      "type": "string",
+      "enum": [
+        "task.accepted",
+        "plan.proposed",
+        "tool.started",
+        "tool.completed",
+        "artifact.created",
+        "approval.requested",
+        "approval.granted",
+        "partial.result",
+        "error.recoverable",
+        "error.terminal",
+        "task.completed",
+        "task.failed",
+        "task.cancelled",
+        "task.expired"
+      ]
     },
     "task_id": {
       "type": "string"

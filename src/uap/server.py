@@ -4,8 +4,14 @@ import asyncio
 import json
 from typing import Any, Dict
 
-from .models import CapabilityCard
+from .models import (
+    CapabilityCard,
+    SUPPORTED_UAP_VERSIONS,
+    UAP_RUNTIME_VERSION,
+    UAP_FEATURES,
+)
 from .runtime import UAPRuntime
+from .errors import UAPError
 
 runtime = UAPRuntime()
 
@@ -63,11 +69,12 @@ def _register_demo_capabilities() -> None:
 _register_demo_capabilities()
 
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, Request
     from fastapi.responses import StreamingResponse
 except Exception:  # pragma: no cover
     FastAPI = None
     HTTPException = Exception
+    Request = None
     StreamingResponse = None
 
 
@@ -76,7 +83,12 @@ if FastAPI:
 
     @app.get("/health")
     async def health():
-        return {"status": "ok", "protocol": "uap", "version": "0.1"}
+        return {
+            "status": "ok",
+            "protocol": "uap",
+            "version": "0.1",
+            "uap_version": UAP_RUNTIME_VERSION,
+        }
 
     @app.get("/uap/capabilities")
     async def list_capabilities():
@@ -92,10 +104,44 @@ if FastAPI:
             raise HTTPException(status_code=404, detail="task not found")
         return runtime.tasks[task_id]
 
+    @app.get("/uap/version")
+    async def get_version():
+        return {
+            "protocol": "uap",
+            "version": UAP_RUNTIME_VERSION,
+            "supported_versions": sorted(list(SUPPORTED_UAP_VERSIONS)),
+            "features": UAP_FEATURES,
+        }
+
+    @app.post("/uap/tasks/{task_id}/approve")
+    async def approve_task(task_id: str, payload: Dict[str, Any]):
+        approver_id = payload.get("approver_id")
+        if not approver_id:
+            raise HTTPException(status_code=400, detail="Missing approver_id")
+        try:
+            return await runtime.resume_after_approval(task_id, approver_id)
+        except UAPError as exc:
+            if exc.code == "TASK_NOT_FOUND":
+                raise HTTPException(status_code=404, detail=exc.message)
+            raise HTTPException(status_code=400, detail=exc.message)
+
+    @app.delete("/uap/tasks/{task_id}")
+    async def cancel_task(task_id: str):
+        if not runtime.cancel(task_id):
+            raise HTTPException(status_code=404, detail="task not found")
+        return {"task_id": task_id, "status": "cancelled"}
+
     @app.get("/uap/tasks/{task_id}/events")
-    async def stream_events(task_id: str):
+    async def stream_events(task_id: str, request: Request):
+        last_id = request.headers.get("last-event-id")
         async def generate():
+            skip = last_id is not None
             async for event in runtime.event_bus.subscribe(task_id):
+                if skip:
+                    if event.event_id == last_id:
+                        skip = False
+                    continue
+                yield f"id: {event.event_id}\n"
                 yield f"event: {event.type}\n"
                 yield "data: " + json.dumps(event.to_dict()) + "\n\n"
         return StreamingResponse(generate(), media_type="text/event-stream")

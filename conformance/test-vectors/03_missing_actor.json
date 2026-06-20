@@ -1,0 +1,16 @@
+{
+  "name": "03_missing_actor",
+  "description": "Envelope missing actor field",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_03",
+    "intent": {
+      "goal": "list overdue invoices"
+    }
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "INVALID_ENVELOPE"
+  }
+}

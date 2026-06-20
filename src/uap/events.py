@@ -28,6 +28,8 @@ class EventBus:
         try:
             for event in self.history(task_id):
                 yield event
+                if event.type in {"task.completed", "task.failed", "task.cancelled"}:
+                    return
             while True:
                 event = await queue.get()
                 yield event

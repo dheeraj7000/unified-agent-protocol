@@ -1,0 +1,17 @@
+{
+  "name": "04_missing_intent_goal",
+  "description": "Envelope missing intent.goal",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_04",
+    "actor": {
+      "agent_id": "agent_04"
+    },
+    "intent": {}
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "INVALID_INTENT"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "06_tool_denied",
+  "description": "Envelope where target tool is denied by policy",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_06",
+    "actor": {
+      "agent_id": "agent_06"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "policy": {
+      "denied_tools": [
+        "invoice.list_overdue"
+      ]
+    }
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "TOOL_DENIED"
+  }
+}

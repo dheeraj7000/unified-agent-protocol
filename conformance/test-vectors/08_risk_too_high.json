@@ -1,0 +1,22 @@
+{
+  "name": "08_risk_too_high",
+  "description": "Envelope where tool risk exceeds policy max_risk",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_08",
+    "actor": {
+      "agent_id": "agent_08"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    },
+    "policy": {
+      "max_risk": "low"
+    }
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "RISK_EXCEEDS_POLICY"
+  }
+}

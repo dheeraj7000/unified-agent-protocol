@@ -1,0 +1,19 @@
+{
+  "name": "13_unsupported_version",
+  "description": "Envelope sending unsupported UAP version 99.0",
+  "input": {
+    "uap": "99.0",
+    "type": "task.invoke",
+    "task_id": "tsk_13",
+    "actor": {
+      "agent_id": "agent_13"
+    },
+    "intent": {
+      "goal": "list overdue invoices"
+    }
+  },
+  "expect": {
+    "status": "failed",
+    "error.code": "UNSUPPORTED_VERSION"
+  }
+}

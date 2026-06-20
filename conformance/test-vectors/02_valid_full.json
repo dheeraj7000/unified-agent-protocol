@@ -1,0 +1,53 @@
+{
+  "name": "02_valid_full",
+  "description": "Full valid envelope that runs invoice.list_overdue and email.draft",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_02",
+    "actor": {
+      "agent_id": "agent_02",
+      "user_id": "user_123",
+      "org_id": "org_abc",
+      "service_id": "service_xyz",
+      "delegation_token": "token_123",
+      "scopes": [
+        "invoice.read",
+        "email.draft"
+      ]
+    },
+    "intent": {
+      "goal": "list overdue invoices and draft emails",
+      "domain": "billing",
+      "parameters": {
+        "limit": 5
+      }
+    },
+    "constraints": {
+      "latency_ms": 5000,
+      "max_cost_usd": 1.5,
+      "max_context_tokens": 4000,
+      "risk_level": "medium"
+    },
+    "context_request": {
+      "detail": "standard",
+      "fields": [
+        "invoice_id",
+        "drafts"
+      ],
+      "evidence_required": true,
+      "max_items": 10,
+      "max_tokens": 2000
+    },
+    "policy": {
+      "allowed_tools": [
+        "invoice.list_overdue",
+        "email.draft"
+      ],
+      "max_risk": "medium"
+    }
+  },
+  "expect": {
+    "status": "completed"
+  }
+}

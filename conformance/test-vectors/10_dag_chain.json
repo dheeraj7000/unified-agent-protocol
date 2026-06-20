@@ -1,0 +1,35 @@
+{
+  "name": "10_dag_chain",
+  "description": "Valid execution graph representing a DAG chain",
+  "input": {
+    "uap": "1.0",
+    "type": "task.invoke",
+    "task_id": "tsk_10",
+    "actor": {
+      "agent_id": "agent_10"
+    },
+    "intent": {
+      "goal": "run chain"
+    },
+    "execution": {
+      "graph": {
+        "nodes": [
+          {
+            "id": "n1",
+            "capability": "invoice.list_overdue"
+          },
+          {
+            "id": "n2",
+            "capability": "email.draft",
+            "depends_on": [
+              "n1"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "expect": {
+    "status": "completed"
+  }
+}

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .errors import ApprovalRequiredError, PolicyDeniedError
-from .models import Actor, CapabilityCard, Policy, TaskEnvelope
+from .models import Actor, CapabilityCard, Policy, TaskEnvelope, TaskNode
 
 
 RISK_ORDER: Dict[str, int] = {
@@ -21,7 +21,28 @@ class PolicyEngine:
     control, user consent, tenant isolation, and audited approval workflows.
     """
 
-    def check(self, envelope: TaskEnvelope, card: CapabilityCard, registry: Optional[Any] = None) -> None:
+    def __init__(self, strict_scopes: bool = False) -> None:
+        """Initialize PolicyEngine.
+
+        Set strict_scopes=True in production to enforce permissions even when
+        the actor presents an empty scope list.
+        """
+        self.strict_scopes = strict_scopes
+        self._overrides: Dict[str, Set[str]] = {}
+
+    def grant_approval(self, task_id: str, capability_id: str) -> None:
+        self._overrides.setdefault(task_id, set()).add(capability_id)
+
+    def revoke_approvals(self, task_id: str) -> None:
+        self._overrides.pop(task_id, None)
+
+    def check(
+        self,
+        envelope: TaskEnvelope,
+        card: CapabilityCard,
+        registry: Optional[Any] = None,
+        node: Optional[TaskNode] = None,
+    ) -> None:
         policy = envelope.policy
         if policy.allowed_tools and card.capability_id not in policy.allowed_tools:
             alternatives: List[str] = []
@@ -71,7 +92,7 @@ class PolicyEngine:
         actor_scopes = set(envelope.actor.scopes)
         missing = sorted(required - actor_scopes)
         # In demo mode we allow empty scopes unless the envelope carries scopes.
-        if envelope.actor.scopes and missing:
+        if (envelope.actor.scopes or self.strict_scopes) and missing:
             raise PolicyDeniedError(
                 code="MISSING_PERMISSION",
                 message="Actor lacks required capability permissions",
@@ -79,7 +100,9 @@ class PolicyEngine:
                 safe_retry=False,
                 details={"missing_permissions": missing},
             )
-        if card.requires_approval or card.capability_id in policy.requires_approval:
+        if card.requires_approval or card.capability_id in policy.requires_approval or (node is not None and node.requires_approval):
+            if card.capability_id in self._overrides.get(envelope.task_id, set()):
+                return
             raise ApprovalRequiredError(
                 code="APPROVAL_REQUIRED",
                 message=f"Capability {card.capability_id} requires approval",
@@ -87,4 +110,3 @@ class PolicyEngine:
                 safe_retry=False,
                 details={"capability_id": card.capability_id},
             )
-

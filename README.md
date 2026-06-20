@@ -1,6 +1,28 @@
 # Unified Agent Protocol (UAP)
 
-### The control plane for agentic applications.
+[![CI](https://github.com/dheeraj7000/unified-agent-protocol/actions/workflows/test.yml/badge.svg)](https://github.com/dheeraj7000/unified-agent-protocol/actions/workflows/test.yml)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+![License Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)
+![Version 0.1.0-alpha](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)
+
+*UAP is not a replacement for MCP, A2A, or AG-UI — it governs and coordinates them. It adds policy enforcement, context budgeting, provenance, and a typed task lifecycle to whatever agent infrastructure you already have.*
+
+### How UAP Relates to Other Protocols
+
+| Protocol / Framework | UAP Relationship |
+| :--- | :--- |
+| **MCP (Model Context Protocol)** | UAP wraps MCP tools with policy, context budgets, and provenance. |
+| **A2A (Agent-to-Agent)** | UAP treats remote A2A agents as delegated capability nodes. |
+| **AG-UI (Agent UI)** | UAP lifecycle events project into AG-UI event streams. |
+| **LangGraph / CrewAI** | UAP can govern graph execution as a policy control plane. |
+| **OpenAPI** | UAP converts OpenAPI operations into policy-aware capability cards. |
+| **OpenTelemetry** | UAP provenance records integrate with OTel trace/span systems. |
+
+### Architecture Flow
+
+```text
+POST envelope → validate → plan DAG → [policy check → execute] × N → compact → record provenance → emit events → return result
+```
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -26,6 +48,7 @@
 UAP is an open, AI-native control-plane protocol that sits above existing protocols — MCP, A2A, AG-UI, REST/OpenAPI, gRPC, GraphQL, Kafka, and WebSockets — and adds the missing coordination layer: **task lifecycle, capability selection, context budgeting, policy enforcement, identity delegation, provenance tracking, structured error recovery, and observable streaming events.**
 
 Existing protocols continue to own transport and domain logic. UAP coordinates all of them under one production-grade contract.
+
 
 ---
 
@@ -151,6 +174,8 @@ if __name__ == "__main__":
 
 ## Quick Start
 
+Full specification: [spec/v0.1/index.md](file:///root/uap-reference/spec/v0.1/index.md)
+
 ### 1. Requirements & Setup
 Python 3.10+. Zero external dependencies for the core library.
 
@@ -172,6 +197,36 @@ curl -X POST http://localhost:8000/uap/tasks \
   -H "Content-Type: application/json" \
   -d @examples/task_invoke.json
 ```
+
+**Expected JSON Response (truncated):**
+```json
+{
+  "task_id": "tsk_quickstart",
+  "status": "completed",
+  "result": {
+    "nodes": {
+      "n1": [
+        {
+          "invoice_id": "INV-1001",
+          "customer": "Acme",
+          "amount": 1200,
+          "due_date": "2026-05-01"
+        }
+      ]
+    },
+    "provenance": [
+      {
+        "task_id": "tsk_quickstart",
+        "capability_id": "invoice.list_overdue",
+        "actor_id": "agent_quickstart",
+        "input_digest": "44136fa355b3...",
+        "output_digest": "c4a94c53f95b..."
+      }
+    ]
+  }
+}
+```
+
 The server will validate the envelope, execute the task graph in parallel, enforce the security policy, apply output field masking, and return the compacted results with provenance.
 
 ### 4. Run the Unit & Integration Tests
@@ -183,6 +238,7 @@ PYTHONPATH=src python -m unittest discover -s tests
 # Run the 53-assertion end-to-end integration test suite
 PYTHONPATH=src python examples/integration_test.py
 ```
+
 
 ---
 
