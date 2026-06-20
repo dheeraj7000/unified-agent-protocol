@@ -11,3 +11,4 @@ dist/
 coverage.xml
 htmlcov/
 *.Zone.Identifier
+conformance-report.json
