@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from ..models import UAPEvent
 
 
-def uap_event_to_cloudevent(event: UAPEvent) -> Dict[str, Any]:
+def uap_event_to_cloudevent(event: UAPEvent) -> dict[str, Any]:
     """Map a UAP lifecycle event to a standard CloudEvents 1.0 JSON envelope."""
 
     return {

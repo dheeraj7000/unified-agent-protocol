@@ -1,6 +1,8 @@
 import asyncio
+
 from uap import UAPRuntime
 from uap.adapters.mcp import mcp_tools_to_capabilities
+
 
 async def main():
     # 1. Define 3 MCP tools
@@ -10,11 +12,9 @@ async def main():
             "description": "Search documentation for keywords",
             "inputSchema": {
                 "type": "object",
-                "properties": {
-                    "query": {"type": "string"}
-                },
-                "required": ["query"]
-            }
+                "properties": {"query": {"type": "string"}},
+                "required": ["query"],
+            },
         },
         {
             "name": "create_issue",
@@ -24,22 +24,20 @@ async def main():
                 "properties": {
                     "repo": {"type": "string"},
                     "title": {"type": "string"},
-                    "body": {"type": "string"}
+                    "body": {"type": "string"},
                 },
-                "required": ["repo", "title"]
-            }
+                "required": ["repo", "title"],
+            },
         },
         {
             "name": "list_repos",
             "description": "List repositories for an organization",
             "inputSchema": {
                 "type": "object",
-                "properties": {
-                    "org": {"type": "string"}
-                },
-                "required": ["org"]
-            }
-        }
+                "properties": {"org": {"type": "string"}},
+                "required": ["org"],
+            },
+        },
     ]
 
     # 2. Convert MCP tools to UAP Capability Cards
@@ -71,17 +69,9 @@ async def main():
         "uap": "1.0",
         "type": "task.invoke",
         "task_id": "tsk_mcp_bridge",
-        "actor": {
-            "agent_id": "agent_mcp",
-            "scopes": ["mcp.github.list_repos"]
-        },
-        "intent": {
-            "goal": "list repositories",
-            "parameters": {"org": "uap-dev"}
-        },
-        "policy": {
-            "allowed_tools": ["github.list_repos"]
-        }
+        "actor": {"agent_id": "agent_mcp", "scopes": ["mcp.github.list_repos"]},
+        "intent": {"goal": "list repositories", "parameters": {"org": "uap-dev"}},
+        "policy": {"allowed_tools": ["github.list_repos"]},
     }
 
     result = await runtime.invoke(payload)
@@ -89,12 +79,13 @@ async def main():
     # Print results and provenance records
     print(f"Task status: {result['status']}")
     print(f"Task output nodes: {result['result']['nodes']}")
-    
-    provenance_list = result['result']['provenance']
+
+    provenance_list = result["result"]["provenance"]
     for prov in provenance_list:
         print(f"Provenance record: capability_id: {prov['capability_id']}")
         print(f"  input_digest: {prov['input_digest']}")
         print(f"  output_digest: {prov['output_digest']}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

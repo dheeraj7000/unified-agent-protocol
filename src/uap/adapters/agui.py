@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from ..models import UAPEvent
 
 
-def uap_event_to_agui(event: UAPEvent) -> Dict[str, Any]:
+def uap_event_to_agui(event: UAPEvent) -> dict[str, Any]:
     """Map UAP lifecycle events to a generic AG-UI-style event envelope."""
 
     mapping = {

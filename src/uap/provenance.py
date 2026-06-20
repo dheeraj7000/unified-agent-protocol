@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, List
+from typing import Any
 
 from .models import ProvenanceRecord, TaskEnvelope, new_id
 
@@ -16,9 +16,11 @@ class ProvenanceStore:
     """Append-only in-memory provenance store."""
 
     def __init__(self) -> None:
-        self._records: List[ProvenanceRecord] = []
+        self._records: list[ProvenanceRecord] = []
 
-    def record(self, envelope: TaskEnvelope, capability_id: str, input_value: Any, output_value: Any) -> ProvenanceRecord:
+    def record(
+        self, envelope: TaskEnvelope, capability_id: str, input_value: Any, output_value: Any
+    ) -> ProvenanceRecord:
         rec = ProvenanceRecord(
             task_id=envelope.task_id,
             capability_id=capability_id,
@@ -30,5 +32,5 @@ class ProvenanceStore:
         self._records.append(rec)
         return rec
 
-    def list_for_task(self, task_id: str) -> List[ProvenanceRecord]:
+    def list_for_task(self, task_id: str) -> list[ProvenanceRecord]:
         return [r for r in self._records if r.task_id == task_id]

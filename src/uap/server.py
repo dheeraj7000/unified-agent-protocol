@@ -1,32 +1,42 @@
 from __future__ import annotations
 
-import asyncio
 import json
-from typing import Any, Dict
+from typing import Any
 
+from .errors import UAPError
 from .models import (
-    CapabilityCard,
     SUPPORTED_UAP_VERSIONS,
-    UAP_RUNTIME_VERSION,
     UAP_FEATURES,
+    UAP_RUNTIME_VERSION,
+    CapabilityCard,
 )
 from .runtime import UAPRuntime
-from .errors import UAPError
 
 runtime = UAPRuntime()
+
 
 # Demo capabilities for local server mode.
 def _register_demo_capabilities() -> None:
     if runtime.registry.list_cards():
         return
 
-    def invoice_list_overdue(input_value: Dict[str, Any], envelope):
+    def invoice_list_overdue(input_value: dict[str, Any], envelope):
         return [
-            {"invoice_id": "INV-1001", "customer": "Acme", "amount": 1200, "due_date": "2026-05-01"},
-            {"invoice_id": "INV-1002", "customer": "Globex", "amount": 840, "due_date": "2026-05-12"},
+            {
+                "invoice_id": "INV-1001",
+                "customer": "Acme",
+                "amount": 1200,
+                "due_date": "2026-05-01",
+            },
+            {
+                "invoice_id": "INV-1002",
+                "customer": "Globex",
+                "amount": 840,
+                "due_date": "2026-05-12",
+            },
         ]
 
-    def email_draft(input_value: Dict[str, Any], envelope):
+    def email_draft(input_value: dict[str, Any], envelope):
         invoices = input_value.get("previous_results", {})
         return {
             "drafts": [
@@ -95,7 +105,7 @@ if FastAPI:
         return {"capabilities": [card.to_dict() for card in runtime.registry.list_cards()]}
 
     @app.post("/uap/tasks")
-    async def invoke_task(payload: Dict[str, Any]):
+    async def invoke_task(payload: dict[str, Any]):
         return await runtime.invoke(payload)
 
     @app.get("/uap/tasks/{task_id}")
@@ -114,7 +124,7 @@ if FastAPI:
         }
 
     @app.post("/uap/tasks/{task_id}/approve")
-    async def approve_task(task_id: str, payload: Dict[str, Any]):
+    async def approve_task(task_id: str, payload: dict[str, Any]):
         approver_id = payload.get("approver_id")
         if not approver_id:
             raise HTTPException(status_code=400, detail="Missing approver_id")
@@ -134,6 +144,7 @@ if FastAPI:
     @app.get("/uap/tasks/{task_id}/events")
     async def stream_events(task_id: str, request: Request):
         last_id = request.headers.get("last-event-id")
+
         async def generate():
             skip = last_id is not None
             async for event in runtime.event_bus.subscribe(task_id):
@@ -144,6 +155,7 @@ if FastAPI:
                 yield f"id: {event.event_id}\n"
                 yield f"event: {event.type}\n"
                 yield "data: " + json.dumps(event.to_dict()) + "\n\n"
+
         return StreamingResponse(generate(), media_type="text/event-stream")
 else:
     app = None

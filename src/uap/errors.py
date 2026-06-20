@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -10,15 +10,15 @@ class UAPError(Exception):
     message: str
     recoverable: bool = False
     safe_retry: bool = False
-    retry_after_ms: Optional[int] = None
-    alternative_capabilities: List[str] = field(default_factory=list)
-    details: Dict[str, Any] = field(default_factory=dict)
+    retry_after_ms: int | None = None
+    alternative_capabilities: list[str] = field(default_factory=list)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
         return f"{self.code}: {self.message}"
 
-    def to_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
             "code": self.code,
             "message": self.message,
             "recoverable": self.recoverable,

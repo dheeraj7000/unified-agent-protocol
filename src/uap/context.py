@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Iterable, List, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from .models import ContextRequest
 
@@ -15,7 +16,7 @@ class ContextManager:
         budget = request.max_tokens or max_context_tokens
         return self._limit_tokens(value, budget)
 
-    def _field_mask(self, value: Any, fields: List[str]) -> Any:
+    def _field_mask(self, value: Any, fields: list[str]) -> Any:
         if not fields:
             return value
         if isinstance(value, list):

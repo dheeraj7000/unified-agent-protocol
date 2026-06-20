@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models import CapabilityCard
 
 
-def mcp_tool_to_capability(tool: Dict[str, Any], server_name: str = "mcp") -> CapabilityCard:
+def mcp_tool_to_capability(tool: dict[str, Any], server_name: str = "mcp") -> CapabilityCard:
     """Map an MCP-style tool descriptor to a UAP capability card."""
 
     name = tool.get("name") or tool.get("id")
@@ -24,5 +24,7 @@ def mcp_tool_to_capability(tool: Dict[str, Any], server_name: str = "mcp") -> Ca
     )
 
 
-def mcp_tools_to_capabilities(tools: List[Dict[str, Any]], server_name: str = "mcp") -> List[CapabilityCard]:
+def mcp_tools_to_capabilities(
+    tools: list[dict[str, Any]], server_name: str = "mcp"
+) -> list[CapabilityCard]:
     return [mcp_tool_to_capability(tool, server_name=server_name) for tool in tools]

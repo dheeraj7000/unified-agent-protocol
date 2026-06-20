@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from ..models import CapabilityCard
 
 
-def resolve_ref(schema: Any, spec: Dict[str, Any], seen: set | None = None) -> Any:
+def resolve_ref(schema: Any, spec: dict[str, Any], seen: set | None = None) -> Any:
     """Recursively resolve JSON references ($ref) in the OpenAPI spec."""
     if seen is None:
         seen = set()
@@ -29,31 +29,33 @@ def resolve_ref(schema: Any, spec: Dict[str, Any], seen: set | None = None) -> A
     return schema
 
 
-def openapi_to_capabilities(spec: Dict[str, Any]) -> List[CapabilityCard]:
+def openapi_to_capabilities(spec: dict[str, Any]) -> list[CapabilityCard]:
     """Convert OpenAPI operations into UAP capability cards.
 
     Parses parameters, JSON request bodies, and success responses to build schemas,
     and supports the `x-uap` vendor extension for overrides.
     """
-    cards: List[CapabilityCard] = []
+    cards: list[CapabilityCard] = []
     for path, methods in spec.get("paths", {}).items():
         for method, operation in methods.items():
             if method.lower() not in {"get", "post", "put", "patch", "delete"}:
                 continue
 
             # Standard operation metadata
-            operation_id = operation.get("operationId") or f"{method}_{path}".replace("/", "_").strip("_")
+            operation_id = operation.get("operationId") or f"{method}_{path}".replace(
+                "/", "_"
+            ).strip("_")
             summary = operation.get("summary") or operation.get("description") or operation_id
             description = operation.get("description", "")
             tags = list(operation.get("tags", []))
             risk = "low" if method.lower() == "get" else "high"
             idempotent = method.lower() in {"get", "put", "delete"}
             requires_approval = False
-            context_cost: Dict[str, Any] = {}
+            context_cost: dict[str, Any] = {}
 
             # Construct input schema from parameters and requestBody
-            input_properties: Dict[str, Any] = {}
-            input_required: List[str] = []
+            input_properties: dict[str, Any] = {}
+            input_required: list[str] = []
 
             # 1. Parse parameters (query, path, header, etc.)
             parameters = operation.get("parameters", [])
@@ -94,7 +96,7 @@ def openapi_to_capabilities(spec: Dict[str, Any]) -> List[CapabilityCard]:
                 input_schema["required"] = sorted(list(set(input_required)))
 
             # Construct output schema from responses (first successful 2xx)
-            output_schema: Dict[str, Any] = {"type": "object"}
+            output_schema: dict[str, Any] = {"type": "object"}
             responses = operation.get("responses", {})
             success_status = None
             for status in ["200", "201", "202", "2xx"]:
@@ -128,7 +130,7 @@ def openapi_to_capabilities(spec: Dict[str, Any]) -> List[CapabilityCard]:
                     requires_approval = risk_info.get("side_effect", requires_approval)
                 elif isinstance(risk_info, str):
                     risk = risk_info
-                
+
                 if "requires_approval" in x_uap:
                     requires_approval = bool(x_uap["requires_approval"])
                 if "context_cost" in x_uap:
@@ -153,4 +155,3 @@ def openapi_to_capabilities(spec: Dict[str, Any]) -> List[CapabilityCard]:
                 )
             )
     return cards
-

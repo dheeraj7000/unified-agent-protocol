@@ -25,8 +25,18 @@ class AdapterTest(unittest.TestCase):
                         "summary": "Create user summary",
                         "description": "Create user description",
                         "parameters": [
-                            {"name": "id", "in": "path", "required": True, "schema": {"type": "string"}},
-                            {"name": "debug", "in": "query", "required": False, "schema": {"type": "boolean"}},
+                            {
+                                "name": "id",
+                                "in": "path",
+                                "required": True,
+                                "schema": {"type": "string"},
+                            },
+                            {
+                                "name": "debug",
+                                "in": "query",
+                                "required": False,
+                                "schema": {"type": "boolean"},
+                            },
                         ],
                         "requestBody": {
                             "required": True,
@@ -41,7 +51,7 @@ class AdapterTest(unittest.TestCase):
                                         "required": ["name"],
                                     }
                                 }
-                            }
+                            },
                         },
                         "responses": {
                             "201": {
@@ -53,7 +63,7 @@ class AdapterTest(unittest.TestCase):
                                             "properties": {"status": {"type": "string"}},
                                         }
                                     }
-                                }
+                                },
                             }
                         },
                         "x-uap": {
@@ -64,7 +74,7 @@ class AdapterTest(unittest.TestCase):
                             },
                             "tags": ["user", "admin"],
                             "context_cost": {"max_tokens": 100},
-                        }
+                        },
                     }
                 }
             }
@@ -78,7 +88,7 @@ class AdapterTest(unittest.TestCase):
         self.assertEqual(card.context_cost, {"max_tokens": 100})
         self.assertIn("user", card.tags)
         self.assertIn("admin", card.tags)
-        
+
         # Check input schema properties
         self.assertEqual(card.input_schema["properties"]["id"], {"type": "string"})
         self.assertEqual(card.input_schema["properties"]["debug"], {"type": "boolean"})
@@ -92,7 +102,10 @@ class AdapterTest(unittest.TestCase):
     def test_cloudevent_adapter(self):
         from uap.adapters.cloudevents import uap_event_to_cloudevent
         from uap.models import UAPEvent
-        event = UAPEvent(type="task.completed", task_id="tsk_123", data={"ok": True}, trace_id="trc_789")
+
+        event = UAPEvent(
+            type="task.completed", task_id="tsk_123", data={"ok": True}, trace_id="trc_789"
+        )
         ce = uap_event_to_cloudevent(event)
         self.assertEqual(ce["specversion"], "1.0")
         self.assertEqual(ce["id"], event.event_id)

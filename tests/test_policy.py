@@ -24,9 +24,14 @@ class PolicyEngineTest(unittest.TestCase):
 
     def test_denies_unallowed_tool_suggests_alternatives(self):
         from uap.capabilities import CapabilityRegistry
+
         registry = CapabilityRegistry()
-        card_allowed = CapabilityCard("allowed_tool", "Allowed Tool", {}, {}, risk="low", tags=["email"])
-        card_denied = CapabilityCard("denied_tool", "Denied Tool", {}, {}, risk="low", tags=["email"])
+        card_allowed = CapabilityCard(
+            "allowed_tool", "Allowed Tool", {}, {}, risk="low", tags=["email"]
+        )
+        card_denied = CapabilityCard(
+            "denied_tool", "Denied Tool", {}, {}, risk="low", tags=["email"]
+        )
         registry.register(card_allowed, lambda x, e: None)
         registry.register(card_denied, lambda x, e: None)
 
@@ -42,9 +47,14 @@ class PolicyEngineTest(unittest.TestCase):
 
     def test_risk_exceeded_suggests_alternatives(self):
         from uap.capabilities import CapabilityRegistry
+
         registry = CapabilityRegistry()
-        card_low = CapabilityCard("low_risk_tool", "Low Risk Tool", {}, {}, risk="low", tags=["email"])
-        card_high = CapabilityCard("high_risk_tool", "High Risk Tool", {}, {}, risk="high", tags=["email"])
+        card_low = CapabilityCard(
+            "low_risk_tool", "Low Risk Tool", {}, {}, risk="low", tags=["email"]
+        )
+        card_high = CapabilityCard(
+            "high_risk_tool", "High Risk Tool", {}, {}, risk="high", tags=["email"]
+        )
         registry.register(card_low, lambda x, e: None)
         registry.register(card_high, lambda x, e: None)
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from .capabilities import CapabilityRegistry
 from .models import TaskEnvelope, TaskGraph, TaskNode
 
@@ -21,7 +19,7 @@ class SimplePlanner:
         candidates = self.registry.search(envelope.intent.goal, allowed=allowed)
         if not candidates and allowed:
             candidates = [self.registry.get(cid).card for cid in allowed]
-        nodes: List[TaskNode] = []
+        nodes: list[TaskNode] = []
         for index, card in enumerate(candidates):
             nodes.append(
                 TaskNode(

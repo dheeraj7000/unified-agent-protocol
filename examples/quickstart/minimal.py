@@ -1,5 +1,7 @@
 import asyncio
-from uap import UAPRuntime, CapabilityCard
+
+from uap import CapabilityCard, UAPRuntime
+
 
 async def main():
     runtime = UAPRuntime()
@@ -14,9 +16,9 @@ async def main():
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             risk="low",
-            tags=["greet"]
+            tags=["greet"],
         ),
-        greet_hello
+        greet_hello,
     )
 
     payload = {
@@ -25,7 +27,7 @@ async def main():
         "task_id": "tsk_quickstart",
         "actor": {"agent_id": "agent_quickstart"},
         "intent": {"goal": "hello"},
-        "policy": {"allowed_tools": ["greet.hello"]}
+        "policy": {"allowed_tools": ["greet.hello"]},
     }
 
     result = await runtime.invoke(payload)
@@ -33,7 +35,10 @@ async def main():
     events_str = " → ".join(events)
     nodes = result.get("result", {}).get("nodes", {})
     output_val = nodes.get("n1", {})
-    print(f"Task {result['task_id']} {result['status']} · result: {output_val} · events: {events_str}")
+    print(
+        f"Task {result['task_id']} {result['status']} · result: {output_val} · events: {events_str}"
+    )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

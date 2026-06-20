@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from .errors import CapabilityNotFoundError
 from .models import CapabilityCard, RegisteredCapability
@@ -15,7 +16,7 @@ class CapabilityRegistry:
     """
 
     def __init__(self) -> None:
-        self._items: Dict[str, RegisteredCapability] = {}
+        self._items: dict[str, RegisteredCapability] = {}
 
     def register(self, card: CapabilityCard, handler: Callable[..., Any]) -> None:
         if card.capability_id in self._items:
@@ -34,19 +35,20 @@ class CapabilityRegistry:
                 details={"capability_id": capability_id},
             ) from exc
 
-    def list_cards(self) -> List[CapabilityCard]:
+    def list_cards(self) -> list[CapabilityCard]:
         return [item.card for item in self._items.values()]
 
-    def search(self, query: str, allowed: Optional[Iterable[str]] = None) -> List[CapabilityCard]:
+    def search(self, query: str, allowed: Iterable[str] | None = None) -> list[CapabilityCard]:
         allowed_set = set(allowed or [])
         terms = {t.lower() for t in query.split() if t.strip()}
-        cards: List[CapabilityCard] = []
+        cards: list[CapabilityCard] = []
         for item in self._items.values():
             card = item.card
             if allowed_set and card.capability_id not in allowed_set:
                 continue
             haystack = " ".join(
-                [card.capability_id, card.purpose, card.description, " ".join(card.tags)] + card.examples
+                [card.capability_id, card.purpose, card.description, " ".join(card.tags)]
+                + card.examples
             ).lower()
             if not terms or any(term in haystack for term in terms):
                 cards.append(card)
@@ -57,15 +59,17 @@ class CapabilityRegistry:
         capability_id: str,
         purpose: str,
         risk: str = "low",
-        permissions: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None,
+        permissions: list[str] | None = None,
+        tags: list[str] | None = None,
     ):
         """Decorator to register a Python function as a capability."""
 
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             signature = inspect.signature(func)
             properties = {
-                name: {"type": "string"} for name in signature.parameters.keys() if name != "envelope"
+                name: {"type": "string"}
+                for name in signature.parameters.keys()
+                if name != "envelope"
             }
             card = CapabilityCard(
                 capability_id=capability_id,

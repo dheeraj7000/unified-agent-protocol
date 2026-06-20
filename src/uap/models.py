@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field, is_dataclass
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional
+from typing import Any
 from uuid import uuid4
 
-JsonDict = Dict[str, Any]
+JsonDict = dict[str, Any]
 
 
 def now_iso() -> str:
@@ -29,27 +30,27 @@ def to_dict(value: Any) -> Any:
 @dataclass
 class Actor:
     agent_id: str
-    user_id: Optional[str] = None
-    org_id: Optional[str] = None
-    service_id: Optional[str] = None
-    delegation_token: Optional[str] = None
-    scopes: List[str] = field(default_factory=list)
+    user_id: str | None = None
+    org_id: str | None = None
+    service_id: str | None = None
+    delegation_token: str | None = None
+    scopes: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Intent:
     goal: str
-    domain: Optional[str] = None
+    domain: str | None = None
     parameters: JsonDict = field(default_factory=dict)
 
 
 @dataclass
 class Constraints:
-    latency_ms: Optional[int] = None
-    max_cost_usd: Optional[float] = None
+    latency_ms: int | None = None
+    max_cost_usd: float | None = None
     max_context_tokens: int = 4000
     risk_level: str = "medium"
-    node_timeout_ms: Optional[int] = None
+    node_timeout_ms: int | None = None
 
 
 SUPPORTED_UAP_VERSIONS = frozenset({"0.1", "1.0"})
@@ -66,22 +67,21 @@ UAP_FEATURES = [
 ]
 
 
-
 @dataclass
 class ContextRequest:
     detail: str = "minimal"
-    fields: List[str] = field(default_factory=list)
+    fields: list[str] = field(default_factory=list)
     evidence_required: bool = True
     max_items: int = 20
-    max_tokens: Optional[int] = None
+    max_tokens: int | None = None
 
 
 @dataclass
 class Policy:
-    requires_approval: List[str] = field(default_factory=list)
-    data_classes: List[str] = field(default_factory=list)
-    allowed_tools: List[str] = field(default_factory=list)
-    denied_tools: List[str] = field(default_factory=list)
+    requires_approval: list[str] = field(default_factory=list)
+    data_classes: list[str] = field(default_factory=list)
+    allowed_tools: list[str] = field(default_factory=list)
+    denied_tools: list[str] = field(default_factory=list)
     max_risk: str = "high"
 
 
@@ -96,7 +96,7 @@ class ExecutionSpec:
     mode: str = "server_optimized"
     parallelism: int = 5
     allow_partial_results: bool = True
-    graph: Optional[JsonDict] = None
+    graph: JsonDict | None = None
 
 
 @dataclass
@@ -114,7 +114,7 @@ class TaskEnvelope:
     metadata: JsonDict = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "TaskEnvelope":
+    def from_dict(cls, data: Mapping[str, Any]) -> TaskEnvelope:
         return cls(
             uap=data.get("uap", "1.0"),
             type=data.get("type", "task.invoke"),
@@ -142,16 +142,16 @@ class CapabilityCard:
     input_schema: JsonDict
     output_schema: JsonDict
     risk: str = "low"
-    permissions: List[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     description: str = ""
     idempotent: bool = True
-    latency_p50_ms: Optional[int] = None
-    latency_p95_ms: Optional[int] = None
+    latency_p50_ms: int | None = None
+    latency_p95_ms: int | None = None
     cost_estimate: str = "low"
     context_cost: JsonDict = field(default_factory=dict)
     requires_approval: bool = False
-    examples: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    examples: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     transport: JsonDict = field(default_factory=dict)
 
     def to_dict(self) -> JsonDict:
@@ -172,15 +172,15 @@ class TaskNode:
     id: str
     capability: str
     input: JsonDict = field(default_factory=dict)
-    depends_on: List[str] = field(default_factory=list)
+    depends_on: list[str] = field(default_factory=list)
     requires_approval: bool = False
 
 
 @dataclass
 class TaskGraph:
-    nodes: List[TaskNode]
+    nodes: list[TaskNode]
 
-    def node_ids(self) -> List[str]:
+    def node_ids(self) -> list[str]:
         return [node.id for node in self.nodes]
 
 
@@ -192,7 +192,7 @@ class UAPEvent:
     uap: str = "1.0"
     event_id: str = field(default_factory=lambda: new_id("evt"))
     time: str = field(default_factory=now_iso)
-    trace_id: Optional[str] = None
+    trace_id: str | None = None
 
     def to_dict(self) -> JsonDict:
         return to_dict(self)

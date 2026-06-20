@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from ..models import CapabilityCard
 
 
-def a2a_agent_card_to_capability(agent_card: Dict[str, Any]) -> CapabilityCard:
+def a2a_agent_card_to_capability(agent_card: dict[str, Any]) -> CapabilityCard:
     """Represent a remote A2A-capable agent as a delegate capability."""
 
     agent_id = agent_card.get("id") or agent_card.get("name") or "remote_agent"

@@ -16,8 +16,20 @@ def build_runtime() -> UAPRuntime:
 
     def invoice_list_overdue(input_value, envelope):
         return [
-            {"invoice_id": "INV-1001", "customer": "Acme", "amount": 1200, "due_date": "2026-05-01", "notes": "ignored by field mask"},
-            {"invoice_id": "INV-1002", "customer": "Globex", "amount": 840, "due_date": "2026-05-12", "notes": "ignored by field mask"},
+            {
+                "invoice_id": "INV-1001",
+                "customer": "Acme",
+                "amount": 1200,
+                "due_date": "2026-05-01",
+                "notes": "ignored by field mask",
+            },
+            {
+                "invoice_id": "INV-1002",
+                "customer": "Globex",
+                "amount": 840,
+                "due_date": "2026-05-12",
+                "notes": "ignored by field mask",
+            },
         ]
 
     def email_draft(input_value, envelope):

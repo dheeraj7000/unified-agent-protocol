@@ -1,5 +1,8 @@
 """Unified Agent Protocol reference implementation."""
 
+from .capabilities import CapabilityRegistry
+from .context import ContextManager
+from .errors import UAPError
 from .models import (
     Actor,
     CapabilityCard,
@@ -12,11 +15,8 @@ from .models import (
     TaskNode,
     UAPEvent,
 )
-from .runtime import UAPRuntime
-from .capabilities import CapabilityRegistry
 from .policy import PolicyEngine
-from .context import ContextManager
-from .errors import UAPError
+from .runtime import UAPRuntime
 
 __all__ = [
     "Actor",

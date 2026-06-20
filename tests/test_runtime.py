@@ -1,6 +1,6 @@
 import asyncio
-import unittest
 import time
+import unittest
 
 from uap import (
     Actor,
@@ -57,7 +57,7 @@ class RuntimeTest(unittest.TestCase):
         result = asyncio.run(runtime.invoke(invalid_payload))
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["error"]["code"], "INVALID_ENVELOPE")
-        
+
         events = [event.type for event in runtime.event_bus.history("tsk_invalid")]
         self.assertIn("error.terminal", events)
         self.assertIn("task.failed", events)
@@ -94,8 +94,8 @@ class RuntimeTest(unittest.TestCase):
                         {"id": "n1", "capability": "step1"},
                         {"id": "n2", "capability": "step2", "depends_on": ["n1"]},
                     ]
-                }
-            }
+                },
+            },
         }
         result = asyncio.run(runtime.invoke(payload))
         self.assertEqual(result["status"], "completed")
@@ -130,7 +130,7 @@ class RuntimeTest(unittest.TestCase):
                         {"id": "n2", "capability": "c2", "depends_on": ["n1"]},
                     ]
                 }
-            }
+            },
         }
         result = asyncio.run(runtime.invoke(payload))
         self.assertEqual(result["status"], "failed")
@@ -150,7 +150,7 @@ class RuntimeTest(unittest.TestCase):
                         {"id": "n1", "capability": "c1", "depends_on": ["n_nonexistent"]},
                     ]
                 }
-            }
+            },
         }
         result = asyncio.run(runtime.invoke(payload))
         self.assertEqual(result["status"], "failed")
@@ -158,6 +158,7 @@ class RuntimeTest(unittest.TestCase):
 
     def test_node_timeout(self):
         runtime = UAPRuntime()
+
         def slow_say(input_value, envelope):
             time.sleep(0.5)
             return {"message": "slow hello"}
@@ -168,9 +169,9 @@ class RuntimeTest(unittest.TestCase):
                 purpose="Slow say",
                 input_schema={},
                 output_schema={},
-                risk="low"
+                risk="low",
             ),
-            slow_say
+            slow_say,
         )
         payload = {
             "uap": "1.0",
@@ -187,6 +188,7 @@ class RuntimeTest(unittest.TestCase):
 
     def test_approval_lifecycle_resume(self):
         runtime = UAPRuntime()
+
         def approval_tool(input_value, envelope):
             return {"status": "ok"}
 
@@ -197,9 +199,9 @@ class RuntimeTest(unittest.TestCase):
                 input_schema={},
                 output_schema={},
                 risk="low",
-                requires_approval=True
+                requires_approval=True,
             ),
-            approval_tool
+            approval_tool,
         )
         payload = {
             "uap": "1.0",

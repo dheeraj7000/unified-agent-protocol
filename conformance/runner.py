@@ -1,15 +1,18 @@
 import json
 import sys
-from pathlib import Path
-import urllib.request
 import urllib.error
+import urllib.request
+from pathlib import Path
 
-def make_request(url: str, method: str, data: dict = None, headers: dict = None) -> tuple[int, dict]:
+
+def make_request(
+    url: str, method: str, data: dict = None, headers: dict = None
+) -> tuple[int, dict]:
     req = urllib.request.Request(
         url,
         data=json.dumps(data).encode("utf-8") if data else None,
         headers=headers or {"Content-Type": "application/json"},
-        method=method
+        method=method,
     )
     try:
         with urllib.request.urlopen(req) as response:
@@ -21,6 +24,7 @@ def make_request(url: str, method: str, data: dict = None, headers: dict = None)
             return e.code, {"error": e.reason}
     except Exception as e:
         return 500, {"error": str(e)}
+
 
 def run(target: str, vectors_dir: str = "conformance/test-vectors") -> None:
     passed = failed = 0
@@ -68,14 +72,16 @@ def run(target: str, vectors_dir: str = "conformance/test-vectors") -> None:
             else:
                 # Fetch events endpoint via streaming
                 try:
-                    req_evt = urllib.request.Request(f"{target}/uap/tasks/{task_id}/events", method="GET")
+                    req_evt = urllib.request.Request(
+                        f"{target}/uap/tasks/{task_id}/events", method="GET"
+                    )
                     event_types = []
                     with urllib.request.urlopen(req_evt) as response:
                         for line_bytes in response:
                             line = line_bytes.decode("utf-8").strip()
                             if line.startswith("event:"):
                                 event_types.append(line.split(":", 1)[1].strip())
-                    
+
                     # Verify task.accepted before tool.started, before task.completed
                     if "task.accepted" not in event_types or "task.completed" not in event_types:
                         print(f"FAIL {name}: task.accepted or task.completed missing in events")
@@ -103,6 +109,7 @@ def run(target: str, vectors_dir: str = "conformance/test-vectors") -> None:
 
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)
+
 
 if __name__ == "__main__":
     run(sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000")
