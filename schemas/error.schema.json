@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/error.schema.json",
+  "title": "UAP Error",
+  "type": "object",
+  "required": [
+    "code",
+    "message",
+    "recoverable",
+    "safe_retry"
+  ],
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "recoverable": {
+      "type": "boolean"
+    },
+    "safe_retry": {
+      "type": "boolean"
+    },
+    "retry_after_ms": {
+      "type": "integer"
+    },
+    "alternative_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "details": {
+      "type": "object"
+    }
+  }
+}

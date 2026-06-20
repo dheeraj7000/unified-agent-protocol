@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/capability_card.schema.json",
+  "title": "UAP Capability Card",
+  "type": "object",
+  "required": [
+    "capability_id",
+    "purpose",
+    "input_schema",
+    "output_schema",
+    "risk",
+    "permissions"
+  ],
+  "properties": {
+    "capability_id": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "input_schema": {
+      "type": "object"
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "risk": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "idempotent": {
+      "type": "boolean"
+    },
+    "latency_p50_ms": {
+      "type": "integer"
+    },
+    "latency_p95_ms": {
+      "type": "integer"
+    },
+    "cost_estimate": {
+      "type": "string"
+    },
+    "context_cost": {
+      "type": "object"
+    },
+    "requires_approval": {
+      "type": "boolean"
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "transport": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

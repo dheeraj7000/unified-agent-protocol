@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/uap_envelope.schema.json",
+  "title": "UAP Envelope",
+  "type": "object",
+  "required": [
+    "uap",
+    "type",
+    "task_id",
+    "actor",
+    "intent"
+  ],
+  "properties": {
+    "uap": {
+      "type": "string",
+      "pattern": "^1\\.0|0\\.1$"
+    },
+    "type": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "actor": {
+      "type": "object"
+    },
+    "intent": {
+      "type": "object"
+    },
+    "constraints": {
+      "type": "object"
+    },
+    "context_request": {
+      "type": "object"
+    },
+    "policy": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "object"
+    },
+    "return": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

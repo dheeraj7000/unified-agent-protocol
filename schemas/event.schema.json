@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/event.schema.json",
+  "title": "UAP Event",
+  "type": "object",
+  "required": [
+    "uap",
+    "type",
+    "task_id",
+    "event_id",
+    "time"
+  ],
+  "properties": {
+    "uap": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_id": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

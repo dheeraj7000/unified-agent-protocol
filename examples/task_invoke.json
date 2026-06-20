@@ -1,0 +1,39 @@
+{
+  "uap": "1.0",
+  "type": "task.invoke",
+  "task_id": "tsk_demo",
+  "actor": {
+    "agent_id": "did:web:agent.example",
+    "user_id": "usr_123"
+  },
+  "intent": {
+    "goal": "Find overdue invoices and draft reminder emails",
+    "domain": "finance.operations"
+  },
+  "constraints": {
+    "latency_ms": 5000,
+    "max_cost_usd": 0.05,
+    "max_context_tokens": 3000,
+    "risk_level": "medium"
+  },
+  "context_request": {
+    "detail": "minimal",
+    "fields": ["invoice_id", "customer", "amount", "due_date", "drafts"],
+    "evidence_required": true,
+    "max_items": 10
+  },
+  "policy": {
+    "requires_approval": ["email.send"],
+    "allowed_tools": ["invoice.list_overdue", "email.draft"],
+    "max_risk": "medium"
+  },
+  "execution": {
+    "mode": "server_optimized",
+    "parallelism": 5,
+    "allow_partial_results": true
+  },
+  "return": {
+    "stream": true,
+    "format": "summary+artifacts"
+  }
+}

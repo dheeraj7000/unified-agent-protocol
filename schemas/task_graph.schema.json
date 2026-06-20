@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/task_graph.schema.json",
+  "title": "UAP Task Graph",
+  "type": "object",
+  "required": [
+    "nodes"
+  ],
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "capability"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "capability": {
+            "type": "string"
+          },
+          "input": {
+            "type": "object"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requires_approval": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+services:
+  uap-server:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - UAP_ENV=dev
